@@ -2,16 +2,16 @@ import requests
 import sys
 
 def test_render_health():
-    # Attempting to ping the Render health endpoint
-    url = "https://sales-agent-pro.onrender.com/health"
-    print(f"Pinging Render health endpoint: {url}...")
+    # Attempting to ping the Render root endpoint
+    url = "https://sales-agent-pro.onrender.com/"
+    print(f"Pinging Render root endpoint: {url}...")
     
     try:
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             print(f"Success! Status Code: {response.status_code}")
             print(f"Response Body: {response.json()}")
-            return True
+            return response.json().get("status") == "online"
         else:
             print(f"Failed! Status Code: {response.status_code}")
             print(f"Response Body: {response.text}")
