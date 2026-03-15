@@ -9,7 +9,7 @@ Bristo Sales Prospector is an MCP (Model Context Protocol) server that empowers 
 - **Deep Prospecting:** Get instant summaries on individuals (roles, skills, focus).
 - **Company Intelligence:** Fetch real-time data on HQ locations, employee counts, and 2026 strategic AI roadmaps.
 - **Autonomous Research:** Claude can decide *when* to use this tool based on your sales-related questions.
-- **Cloud Hosted:** High availability via Render SSE transport.
+- **Cloud Hosted:** High availability via Render.
 
 ---
 
@@ -34,7 +34,7 @@ Once installed, you don't need special commands. Just ask Claude naturally:
 
 - **`.claude-plugin/`**: Official marketplace metadata and `plugin.json`.
 - **`agents/`**: Contains `SKILL.md` which defines the agent's behavior and personality.
-- **`mcp_server.py`**: The core Python engine (FastMCP) hosted on Render.
+- **`mcp_server.py`**: The core Python engine (FastMCP/FastAPI) hosted on Render.
 - **`demo.html`**: A local playground to test the server connection.
 
 ## 🔒 Privacy & Security
@@ -45,7 +45,9 @@ Once installed, you don't need special commands. Just ask Claude naturally:
 
 ## 💰 Pricing
 
-This agent uses the x402 protocol via xpay.sh for pay-per-use tool calls. This agent requires a top-up via x402 at [https://paywall.xpay.sh/sales-pro](https://paywall.xpay.sh/sales-pro)
+This agent uses the x402 protocol via xpay.sh for pay-per-use tool calls.
+
+**Top-up via x402 at**: [https://paywall.xpay.sh/sales-pro](https://paywall.xpay.sh/sales-pro)
 
 ---
 
