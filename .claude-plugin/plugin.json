@@ -13,5 +13,6 @@
   "pricing": "Pay-per-use",
   "privacy_policy_url": "https://github.com/Bristo/sales-agent-pro/blob/main/PRIVACY.md",
   "license": "MIT",
-  "license_url": "https://github.com/Bristo/sales-agent-pro/blob/main/LICENSE"
+  "license_url": "https://github.com/Bristo/sales-agent-pro/blob/main/LICENSE",
+  "schema_version": "2026.1"
 }
