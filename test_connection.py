@@ -11,7 +11,7 @@ def test_render_health():
         if response.status_code == 200:
             print(f"Success! Status Code: {response.status_code}")
             print(f"Response Body: {response.json()}")
-            return response.json().get("status") == "online"
+            return response.json().get("status") == "ok"
         else:
             print(f"Failed! Status Code: {response.status_code}")
             print(f"Response Body: {response.text}")

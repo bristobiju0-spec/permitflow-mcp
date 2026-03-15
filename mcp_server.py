@@ -83,22 +83,22 @@ app = FastAPI()
 @app.get("/")
 async def root():
     """
-    Root diagnostic route for browser verification.
+    Root diagnostic route for Render and xpay health checks.
     """
-    return {"status": "online"}
+    return {"status": "ok"}
 
 @app.get("/health")
 async def health():
     """
-    Automated health check route for Render and xpay.sh.
+    Secondary health check route.
     """
     return {"status": "ready"}
 
-# Mount FastMCP at the root path (/)
-mcp.mount(app, path="/")
+# Mount FastMCP without the 'path' argument (it is not supported in this version)
+mcp.mount(app)
 
 if __name__ == "__main__":
-    # Render uses port 10000 by default
+    # Render requires binding to 0.0.0.0 and using the PORT env var
     port = int(os.getenv("PORT", 10000))
-    logger.info(f"Starting 'sales-pro' MCP Server on port {port} at root path (/)")
+    logger.info(f"Starting 'sales-pro' MCP Server on host 0.0.0.0 port {port}")
     uvicorn.run(app, host="0.0.0.0", port=port)
