@@ -4,8 +4,12 @@ from typing import Optional
 
 from mcp.server.fastmcp import FastMCP
 
+import os
+
+port = int(os.environ.get("PORT", 8000))
+
 # Initialize FastMCP Server
-mcp = FastMCP("Lead Generation Agent")
+mcp = FastMCP("Lead Generation Agent", host="0.0.0.0", port=port)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -55,13 +59,10 @@ def research_prospect(name: str, company: Optional[str] = None) -> str:
     
     return summary
 
-import os
-
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 8000))
     if os.environ.get("RENDER"):
         logger.info(f"Starting Lead Generation MCP Server on Render (SSE, port {port})...")
-        mcp.run(transport="sse", host="0.0.0.0", port=port)
+        mcp.run(transport="sse")
     else:
         logger.info("Starting Lead Generation MCP Server locally...")
         mcp.run()
