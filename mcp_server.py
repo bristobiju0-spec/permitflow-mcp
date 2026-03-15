@@ -4,8 +4,8 @@ from typing import Optional, List
 import os
 from fastmcp import FastMCP
 
-# Initialize FastMCP Server
-mcp = FastMCP("Sales-Prospector-Pro")
+# Initialize FastMCP Server with the 'sales-pro' slug
+mcp = FastMCP("sales-pro")
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

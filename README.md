@@ -45,9 +45,7 @@ Once installed, you don't need special commands. Just ask Claude naturally:
 
 ## 💰 Pricing
 
-This agent uses the x402 protocol via xpay.sh for pay-per-use tool calls. Use a supported x402 wallet to interact.
-
-**Paywall Link**: [https://paywall.xpay.sh/sales-pro](https://paywall.xpay.sh/sales-pro)
+This agent uses the x402 protocol via xpay.sh for pay-per-use tool calls. This agent requires a top-up via x402 at [https://paywall.xpay.sh/sales-pro](https://paywall.xpay.sh/sales-pro)
 
 ---
 
