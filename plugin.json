@@ -1,0 +1,14 @@
+{
+  "name": "Bristo Sales Prospector",
+  "description": "An autonomous agent for deep-researching B2B leads. Finds HQ, employee counts, and funding data.",
+  "version": "1.0.0",
+  "author": "Bristo",
+  "mcpServers": {
+    "sales-pro": {
+      "url": "https://sales-pro.mcp.xpay.sh/mcp",
+      "transport": "http"
+    }
+  },
+  "capabilities": ["research", "lead-gen"],
+  "pricing": "Pay-per-use"
+}

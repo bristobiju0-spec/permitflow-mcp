@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sales Agent Pro | Live Demo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #9d50bb;
+            --primary-light: #be93c5;
+            --bg-gradient: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --text-main: #f8f9fa;
+            --text-dim: #adb5bd;
+            --accent: #00d2ff;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(to right, #00d2ff, #9d50bb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+
+        p.subtitle {
+            text-align: center;
+            color: var(--text-dim);
+            margin-bottom: 24px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 24px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 5px;
+            border-radius: 12px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s;
+            color: var(--text-dim);
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(157, 80, 187, 0.3);
+        }
+
+        .form-section {
+            display: none;
+        }
+
+        .form-section.active {
+            display: block;
+            animation: fadeIn 0.4s ease-out;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            color: var(--text-dim);
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            color: white;
+            font-size: 0.95rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary-light);
+            background: rgba(255, 255, 255, 0.07);
+            box-shadow: 0 0 0 4px rgba(157, 80, 187, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            margin-top: 8px;
+            background: linear-gradient(to right, #9d50bb, #6e48aa);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        button::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: 0.5s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(157, 80, 187, 0.5);
+        }
+
+        button:hover::after {
+            left: 100%;
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #result {
+            margin-top: 24px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 16px;
+            border: 1px solid var(--glass-border);
+            display: none;
+            animation: slideUp 0.5s ease-out;
+            white-space: pre-wrap;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            line-height: 1.5;
+            color: #e0e0e0;
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .spinner {
+            width: 18px;
+            height: 18px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: rgba(0, 210, 255, 0.1);
+            color: var(--accent);
+            border: 1px solid rgba(0, 210, 255, 0.2);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="status-badge" id="conn-status">Connecting to Agent...</div>
+        <h1>Sales-Prospector-Pro</h1>
+        <p class="subtitle">Next-Gen Intelligence Engine</p>
+
+        <div class="tabs">
+            <div class="tab active" data-target="prospect-form">Prospect Research</div>
+            <div class="tab" data-target="company-form">Company Strategy</div>
+        </div>
+
+        <div id="prospect-form" class="form-section active">
+            <div class="form-group">
+                <label for="name">Prospect Name</label>
+                <input type="text" id="name" placeholder="e.g. Aladdin Baitfadhil" required>
+            </div>
+            <div class="form-group">
+                <label for="company">Company</label>
+                <input type="text" id="company" placeholder="e.g. Omantel" required>
+            </div>
+            <button class="submit-btn" disabled>
+                <span class="spinner"></span>
+                <span class="btn-text">Research Prospect</span>
+            </button>
+        </div>
+
+        <div id="company-form" class="form-section">
+            <div class="form-group">
+                <label for="company-name">Company Name</label>
+                <input type="text" id="company-name" placeholder="e.g. Google" required>
+            </div>
+            <button class="submit-btn" disabled>
+                <span class="spinner"></span>
+                <span class="btn-text">Analyze Strategy</span>
+            </button>
+        </div>
+
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        const tabs = document.querySelectorAll('.tab');
+        const sections = document.querySelectorAll('.form-section');
+        const resultDiv = document.getElementById('result');
+        const connStatus = document.getElementById('conn-status');
+
+        // Tab switching logic
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                tabs.forEach(t => t.classList.remove('active'));
+                sections.forEach(s => s.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById(tab.dataset.target).classList.add('active');
+                resultDiv.style.display = 'none';
+            });
+        });
+
+        // Simulating the connection handshake
+        setTimeout(() => {
+            connStatus.textContent = 'Agent Online';
+            connStatus.style.background = 'rgba(76, 175, 80, 0.1)';
+            connStatus.style.color = '#4CAF50';
+            connStatus.style.borderColor = 'rgba(76, 175, 80, 0.2)';
+            document.querySelectorAll('.submit-btn').forEach(btn => btn.disabled = false);
+        }, 1200);
+
+        // Handle Form Submissions
+        sections.forEach(section => {
+            const btn = section.querySelector('.submit-btn');
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner');
+
+            btn.addEventListener('click', async () => {
+                const inputs = section.querySelectorAll('input');
+                let allFilled = true;
+                inputs.forEach(input => { if(!input.value) allFilled = false; });
+                if(!allFilled) return;
+
+                // UI Feedback
+                btn.disabled = true;
+                spinner.style.display = 'block';
+                const originalText = btnText.textContent;
+                btnText.textContent = 'Researching...';
+                resultDiv.style.display = 'none';
+
+                try {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+
+                    let output = "";
+                    if (section.id === 'prospect-form') {
+                        const name = document.getElementById('name').value;
+                        const company = document.getElementById('company').value;
+                        output = `Prospect Profile Summary: ${name}
+--------------------------------------------------
+Current Role: VP of Sales at ${company}
+Experience: ~8 years
+Key Skills: Leadership, Strategic Planning, B2B Sales
+Recent Activity: Recently posted about scaleable solutions at ${company}.
+--------------------------------------------------
+Lead Gen Assessment:
+- Contact Probability: High
+- Estimated Email: ${name.split(' ')[0].toLowerCase()}@${company.toLowerCase().replace(/\s/g, '')}.com`;
+                    } else {
+                        const companyName = document.getElementById('company-name').value;
+                        if (companyName.toLowerCase().includes('google')) {
+                            output = `Google AI Strategic Focus (2026 Roadmap Summary):
+--------------------------------------------------
+1. Agentic AI: Maturation of autonomous agents capable of planning and executing multi-step tasks.
+2. Infrastructure: Gigawatt-scale data centers and custom TPU expansion for Gemini training.
+3. Gemini Evolution: Continued reasoning enhancements and full replacement of Google Assistant.
+4. Robotics: Embodied AI and humanoid foundation models from DeepMind.
+5. Search Transformation: Shift from link-based retrieval to a synthesized answer engine.
+--------------------------------------------------
+Market Position: Leading in pervasive integration and agentic capabilities across Workspace and Android.`;
+                        } else {
+                            output = `Researching ${companyName}... Found: HQ in SF, 500 employees, recently focused on scaling AI infrastructure.`;
+                        }
+                    }
+
+                    resultDiv.textContent = output;
+                    resultDiv.style.display = 'block';
+                } catch (error) {
+                    resultDiv.textContent = "Error: " + error.message;
+                    resultDiv.style.display = 'block';
+                } finally {
+                    btn.disabled = false;
+                    spinner.style.display = 'none';
+                    btnText.textContent = originalText;
+                }
+            });
+        });
+    </script>
+</body>
+</html>
