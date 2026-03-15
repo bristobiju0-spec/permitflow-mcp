@@ -85,7 +85,7 @@ async def root():
     """
     Root diagnostic route for browser verification.
     """
-    return {"mcp": "active"}
+    return {"status": "online", "mcp": "ready"}
 
 @app.get("/health")
 async def health():
