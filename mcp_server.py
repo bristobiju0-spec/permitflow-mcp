@@ -55,7 +55,13 @@ def research_prospect(name: str, company: Optional[str] = None) -> str:
     
     return summary
 
+import os
+
 if __name__ == "__main__":
-    # Start the FastMCP server when run as the main module
-    logger.info("Starting Lead Generation MCP Server...")
-    mcp.run()
+    port = int(os.environ.get("PORT", 8000))
+    if os.environ.get("RENDER"):
+        logger.info(f"Starting Lead Generation MCP Server on Render (SSE, port {port})...")
+        mcp.run(transport="sse", host="0.0.0.0", port=port)
+    else:
+        logger.info("Starting Lead Generation MCP Server locally...")
+        mcp.run()
