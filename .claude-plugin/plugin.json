@@ -6,12 +6,12 @@
   "author": "Bristo",
   "mcpServers": {
     "sales-pro": {
-      "url": "https://sales-pro.mcp.xpay.sh/",
+      "url": "https://sales-agent-pro.onrender.com/",
       "transport": "http"
     }
   },
   "capabilities": ["research", "lead-gen"],
-  "pricing": "Pay-per-use",
+  "pricing": "Free Beta",
   "privacy_policy_url": "https://github.com/Bristo/sales-agent-pro/blob/main/PRIVACY.md",
   "license": "MIT",
   "license_url": "https://github.com/Bristo/sales-agent-pro/blob/main/LICENSE",
