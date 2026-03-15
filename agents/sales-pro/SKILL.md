@@ -10,7 +10,7 @@ This skill allows the agent to use the Sales-Prospector-Pro MCP Server to gather
 ## How to Use
 
 1. **Setup**: `pip install -r requirements.txt`
-2. **Launch**: `python server.py`
+2. **Launch**: `python mcp_server.py`
 3. **Connect**: Connect via Claude using the provided MCP URL.
 
 ## Available Tools
