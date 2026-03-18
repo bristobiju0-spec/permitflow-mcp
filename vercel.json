@@ -1,20 +1,9 @@
 {
   "version": 2,
-  "name": "permitflow-pro",
-  "builds": [
-    {
-      "src": "api/index.py",
-      "use": "@vercel/python"
-    },
-    {
-      "src": "public/**",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.py"
+      "dest": "api/main.py"
     },
     {
       "src": "/auth.js",
