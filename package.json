@@ -2,7 +2,7 @@
   "name": "permitflow-pro-serverless",
   "version": "1.0.0",
   "description": "Serverless functions and PWA assets for PermitFlow Pro",
-  "main": "api/index.py",
+  "main": "api/main.py",
   "dependencies": {
     "@supabase/supabase-js": "^2.39.7"
   },
