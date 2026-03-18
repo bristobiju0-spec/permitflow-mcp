@@ -1,0 +1,51 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "mcp_server.py",
+      "use": "@vercel/python"
+    },
+    {
+      "src": "*.html",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.js",
+      "use": "@vercel/static"
+    },
+    {
+      "src": "*.json",
+      "use": "@vercel/static"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/health",
+      "dest": "mcp_server.py"
+    },
+    {
+      "src": "/logs",
+      "dest": "mcp_server.py"
+    },
+    {
+      "src": "/user",
+      "dest": "mcp_server.py"
+    },
+    {
+      "src": "/auth.js",
+      "dest": "/auth.js"
+    },
+    {
+      "src": "/sw.js",
+      "dest": "/sw.js"
+    },
+    {
+      "src": "/manifest.json",
+      "dest": "/manifest.json"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/pro_dashboard.html"
+    }
+  ]
+}
