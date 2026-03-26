@@ -169,7 +169,7 @@ async def get_user_account(email: str = "guest@permitflow.pro"):
     
     is_subscription_required = credits_used >= 10 or days_since_signup > 30
     if user_data['is_pro']: is_subscription_required = False
-
+    return {
         "email": user_data['email'],
         "credits_used": credits_used,
         "credits_remaining": 9999 if user_data['is_pro'] else max(0, 10 - credits_used),
