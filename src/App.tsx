@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import confetti from 'canvas-confetti';
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
+import pricing from './pricing.json';
 
 // Mock Auth for the demo/vibe
 const PermitFlowAuth = {
@@ -331,8 +332,27 @@ export default function App() {
                 </nav>
                 <div className="p-6 border-t border-white/5">
                     <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
-                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 font-mono">Credits: {userData.credits_remaining}/10</p>
-                        <button onClick={() => setShowPaywall(true)} className="w-full py-2 bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-cyan-500/20">Upgrade Now</button>
+                        <div className="mb-4">
+                            <div className="flex justify-between text-[10px] text-slate-500 font-black uppercase tracking-widest mb-2 font-mono">
+                                <span>Credits</span>
+                                <span>{10 - userData.credits_remaining}/10</span>
+                            </div>
+                            {!userData.is_pro && (
+                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
+                                    <motion.div 
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${(10 - userData.credits_remaining) * 10}%` }}
+                                        className="h-full bg-cyan-500"
+                                    />
+                                </div>
+                            )}
+                        </div>
+                        <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mb-3">
+                            {userData.is_pro ? "PRO UNLIMITED" : `${10 - userData.credits_remaining} of 10 Free Credits Used`}
+                        </p>
+                        <button onClick={() => setShowPaywall(true)} className="w-full py-2 bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-cyan-500/20 hover:bg-cyan-500 hover:text-black transition-all">
+                            {userData.is_pro ? "Manage Subscription" : `Upgrade now for $${pricing.professional.price_monthly}`}
+                        </button>
                     </div>
                 </div>
             </aside>
@@ -428,18 +448,31 @@ export default function App() {
             <AnimatePresence>
                 {showPaywall && (
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[600] flex items-center justify-center p-6" onClick={() => setShowPaywall(false)}>
-                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="industrial-card max-w-md w-full p-10 rounded-[32px] text-center" onClick={e => e.stopPropagation()}>
-                            <h2 className="text-3xl font-black text-white mb-4 uppercase italic">Upgrade to PRO</h2>
-                            <p className="text-slate-400 mb-8 text-sm leading-relaxed">Unlimited audits and PDF certificates for <span className="text-cyan-400 font-bold">$99/mo</span>.</p>
+                        <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="industrial-card max-w-md w-full p-10 rounded-[40px] text-center relative overflow-hidden" onClick={e => e.stopPropagation()}>
+                            <div className="absolute top-0 right-0 px-4 py-1 bg-cyan-500 text-black text-[8px] font-black uppercase tracking-widest rounded-bl-xl">
+                                {pricing.professional.badge}
+                            </div>
+                            <h2 className="text-3xl font-black text-white mb-2 uppercase italic">Professional</h2>
+                            <p className="text-cyan-400 text-2xl font-black mb-6 italic">${pricing.professional.price_monthly}<span className="text-slate-500 text-xs font-bold uppercase tracking-widest not-italic"> / month</span></p>
+                            
+                            <ul className="text-left space-y-3 mb-8">
+                                {["Unlimited HVAC Audits", "Custom PDF Certificates", "Priority API Access", "Compliance Notifications"].map((feat, i) => (
+                                    <li key={i} className="flex items-center gap-3 text-[10px] font-bold text-slate-300 uppercase tracking-widest">
+                                        <svg className="w-4 h-4 text-cyan-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
+                                        {feat}
+                                    </li>
+                                ))}
+                            </ul>
+
                             <a 
-                                href={`https://gumroad.com/l/pro-compliance?email=${user.email}`} 
-                                className="gumroad-button w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg block"
+                                href={`${pricing.professional.gumroad_url}?email=${user?.email}`} 
+                                className="gumroad-button w-full py-5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg block mb-4"
                                 target="_blank" 
                                 rel="noopener noreferrer"
                             >
-                                Subscribe via Gumroad
+                                Secure Access via Gumroad
                             </a>
-                            <button onClick={() => setShowPaywall(false)} className="mt-4 text-[10px] text-slate-500 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
+                            <button onClick={() => setShowPaywall(false)} className="text-[10px] text-slate-600 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
                         </motion.div>
                     </motion.div>
                 )}
