@@ -97,44 +97,25 @@
             border: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
-        .bento-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
-        }
-        .skeleton {
-            background: linear-gradient(90deg, #1a1a1e 25%, #2d2d35 50%, #1a1a1e 75%);
-            background-size: 200% 100%;
-            animation: skeleton-loading 1.5s infinite;
-        }
-        @keyframes skeleton-loading {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-        .side-drawer {
-            background: rgba(13, 13, 15, 0.8) !important;
-            backdrop-filter: blur(20px) !important;
-            border-left: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: -20px 0 50px rgba(0, 0, 0, 0.5);
-        }
-
         .bg-industrial-grid {
             background-image: radial-gradient(circle at 2px 2px, rgba(255,255,255,0.02) 1px, transparent 0);
             background-size: 40px 40px;
         }
-
         .fat-input {
             background: rgba(255,255,255,0.03);
             border: 2px solid rgba(255,255,255,0.05);
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         .fat-input:focus {
             border-color: #06b6d4;
             background: rgba(6,182,212,0.05);
             box-shadow: 0 0 20px rgba(6,182,212,0.1);
             outline: none;
         }
+        .prose h1 { font-size: 2rem; font-weight: 800; margin-bottom: 2rem; text-transform: uppercase; color: #fff; font-style: italic; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 1rem; }
+        .prose h2 { font-size: 1.25rem; font-weight: 700; margin-top: 2.5rem; margin-bottom: 1rem; color: #06b6d4; text-transform: uppercase; letter-spacing: 0.1em; }
+        .prose p { font-size: 0.875rem; line-height: 1.8; color: #94a3b8; margin-bottom: 1.25rem; font-weight: 500; }
+        .prose strong { color: #fff; font-weight: 700; }
     </style>
 </head>
 <body>
@@ -144,7 +125,6 @@
         const { useState, useEffect, useMemo, useCallback } = React;
 
         function App() {
-            // Safe access to FramerMotion
             const motion = window.FramerMotion ? window.FramerMotion.motion : ({div: 'div'}); 
             const AnimatePresence = window.FramerMotion ? window.FramerMotion.AnimatePresence : ({children}) => children;
 
@@ -152,32 +132,20 @@
                 const saved = localStorage.getItem('permitflow_audits');
                 return saved ? JSON.parse(saved) : [];
             });
-            const [selectedImage, setSelectedImage] = useState(null);
             const [preview, setPreview] = useState(null);
-            const [status, setStatus] = useState('idle'); // idle, scanning, analyzing, completed
+            const [status, setStatus] = useState('idle');
             const [currentResult, setCurrentResult] = useState(null);
             const [toast, setToast] = useState(null);
-            const [debugLog, setDebugLog] = useState([]);
             const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
-            const [pdfGenerated, setPdfGenerated] = useState(false);
-            const [activeView, setActiveView] = useState('dashboard'); // dashboard or gallery
-            const [galleryLogs, setGalleryLogs] = useState([]);
-            const [galleryLoading, setGalleryLoading] = useState(false);
-            const [galleryFilter, setGalleryFilter] = useState('ALL'); // ALL, APPROVED, REJECTED
-            const [gallerySearch, setGallerySearch] = useState('');
-            const [selectedAudit, setSelectedAudit] = useState(null);
+            const [activeView, setActiveView] = useState('dashboard');
             const [userData, setUserData] = useState({ email: null, credits_remaining: 10, is_subscription_required: false });
             const [showPaywall, setShowPaywall] = useState(false);
             const [user, setUser] = useState(window.PermitFlowAuth ? window.PermitFlowAuth.user : null);
             const [loginEmail, setLoginEmail] = useState('');
             const [authLoading, setAuthLoading] = useState(false);
-            const [magicSent, setMagicSent] = useState(false);
-            const [hasScannedAnonymously, setHasScannedAnonymously] = useState(localStorage.getItem('pf_anon_scan') === 'true');
-            const [showBlurredOverlay, setShowBlurredOverlay] = useState(false);
             const [isOffline, setIsOffline] = useState(!navigator.onLine);
-            const [pendingSyncs, setPendingSyncs] = useState(0);
-
-            // --- Hook logic moved inside App for scope safety ---
+            const [agreedToTerms, setAgreedToTerms] = useState(false);
+            const [legalModal, setLegalModal] = useState({ show: false, content: '' });
             const [isLocked, setIsLocked] = useState(false);
             const [cooldownRemaining, setCooldownRemaining] = useState(0);
 
@@ -204,9 +172,7 @@
                     const response = await fetch(`/user?email=${user.email}`);
                     const data = await response.json();
                     setUserData(data);
-                    if (data.is_subscription_required) {
-                        setShowPaywall(true);
-                    }
+                    if (data.is_subscription_required) setShowPaywall(true);
                 } catch (error) {
                     console.error("Failed to fetch user data", error);
                 }
@@ -214,35 +180,37 @@
 
             const handleLogin = async (e) => {
                 e.preventDefault();
+                if (!agreedToTerms) {
+                    setToast({ message: "Please agree to the Terms & Privacy Policy.", type: "warning" });
+                    return;
+                }
                 setAuthLoading(true);
                 try {
-                    // Simulation for Vibe code
                     const res = await window.PermitFlowAuth.login(loginEmail);
-                    setMagicSent(true);
                     setToast({ message: res.message, type: "info" });
-                    
-                    // Auto-verify for demo convenience (Vibe check)
                     setTimeout(async () => {
                         const newUser = await window.PermitFlowAuth.verify(loginEmail);
                         setUser(newUser);
                         setAuthLoading(false);
                     }, 2000);
                 } catch (err) {
-                    setToast({ message: "Auth failed. Try again.", type: "error" });
+                    setToast({ message: "Auth failed", type: "error" });
                     setAuthLoading(false);
                 }
             };
 
             const handleGoogleLogin = async () => {
+                if (!agreedToTerms) {
+                    setToast({ message: "Please agree to the Terms & Privacy Policy.", type: "warning" });
+                    return;
+                }
                 setAuthLoading(true);
                 try {
                     const res = await window.PermitFlowAuth.signInWithGoogle();
-                    // Simulate redirect and return with user (Vibe check)
                     setTimeout(async () => {
                         const newUser = await window.PermitFlowAuth.verify('google-pro-contractor@gmail.com');
                         setUser(newUser);
                         setAuthLoading(false);
-                        setShowBlurredOverlay(false);
                     }, 1500);
                 } catch (err) {
                     setToast({ message: "Google Auth Failed", type: "error" });
@@ -250,101 +218,58 @@
                 }
             };
 
-            const handleOnline = useCallback(() => {
-                setIsOffline(false);
-                setToast({ message: "Back online. Syncing records...", type: "info" });
-                setTimeout(() => setPendingSyncs(0), 2000);
-            }, [setToast, setIsOffline, setPendingSyncs]);
-
-            const handleOffline = useCallback(() => setIsOffline(true), [setIsOffline]);
+            const openLegal = async (type) => {
+                setLegalModal({ show: true, content: null });
+                try {
+                    const response = await fetch(`./${type}.md`);
+                    const text = await response.text();
+                    const html = text.split('\n').map(line => {
+                        if (line.startsWith('# ')) return `<h1>${line.slice(2)}</h1>`;
+                        if (line.startsWith('## ')) return `<h2>${line.slice(3)}</h2>`;
+                        if (line.startsWith('### ')) return `<h3>${line.slice(4)}</h3>`;
+                        return `<p>${line}</p>`;
+                    }).join('');
+                    setLegalModal({ show: true, content: html });
+                } catch (err) {
+                    setToast({ message: "Failed to load legal document", type: "error" });
+                }
+            };
 
             useEffect(() => {
-                fetchUserData();
-                
-                // --- Supabase Realtime Sync (Vibe) ---
-                let accountSubscription;
-                if (user && user.email) {
-                    console.log(`[Realtime] Subscribing to user account for ${user.email}`);
-                    accountSubscription = window.PermitFlowAuth.supabase
-                        .channel('user-account-changes')
-                        .on(
-                            'postgres_changes', 
-                            { 
-                                event: 'UPDATE', 
-                                schema: 'public', 
-                                table: 'user_account',
-                                filter: `email=eq.${user.email}` 
-                            }, 
-                            (payload) => {
-                                console.log('[Realtime] Account Updated:', payload.new);
-                                const newAccount = payload.new;
-                                setUserData(newAccount);
-                                
-                                // Auto-hide paywall on upgrade
-                                if (newAccount.is_pro) {
-                                    setShowPaywall(false);
-                                    setToast({ message: "PRO STATUS ACTIVE! Unlimited Audits Unlocked.", type: "success" });
-                                    if (window.confetti) {
-                                        window.confetti({
-                                            particleCount: 200,
-                                            spread: 80,
-                                            origin: { y: 0.6 }
-                                        });
-                                    }
-                                }
-                            }
-                        )
-                        .subscribe();
-                }
-
+                const handleOnline = () => {
+                    setIsOffline(false);
+                    setToast({ message: "Back online", type: "info" });
+                };
+                const handleOffline = () => setIsOffline(true);
                 window.addEventListener('online', handleOnline);
                 window.addEventListener('offline', handleOffline);
+                
+                if (user) fetchUserData();
 
-                if ('serviceWorker' in navigator) {
-                    window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('./sw.js').then(reg => {
-                            console.log('SW registered:', reg);
-                        }).catch(err => {
-                            console.log('SW failed:', err);
-                        });
-                    });
+                let accountSubscription;
+                if (user && user.email && window.PermitFlowAuth && window.PermitFlowAuth.supabase) {
+                    accountSubscription = window.PermitFlowAuth.supabase
+                        .channel('user-account-changes')
+                        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'user_account', filter: `email=eq.${user.email}` }, 
+                        (payload) => {
+                            setUserData(payload.new);
+                            if (payload.new.is_pro) {
+                                setShowPaywall(false);
+                                setToast({ message: "PRO STATUS ACTIVE!", type: "success" });
+                            }
+                        }).subscribe();
                 }
+
                 return () => {
                     window.removeEventListener('online', handleOnline);
                     window.removeEventListener('offline', handleOffline);
-                    if (accountSubscription) {
-                        window.PermitFlowAuth.supabase.removeChannel(accountSubscription);
-                    }
+                    if (accountSubscription && window.PermitFlowAuth?.supabase) window.PermitFlowAuth.supabase.removeChannel(accountSubscription);
                 };
-            }, [fetchUserData, user, handleOnline, handleOffline]);
+            }, [user, fetchUserData]);
 
             useEffect(() => {
                 localStorage.setItem('permitflow_audits', JSON.stringify(audits));
             }, [audits]);
-
-            const fetchGalleryLogs = useCallback(async () => {
-                setGalleryLoading(true);
-                try {
-                    const params = new URLSearchParams();
-                    params.append('email', user.email);
-                    if (galleryFilter !== 'ALL') params.append('status', galleryFilter);
-                    if (gallerySearch) params.append('search', gallerySearch);
-                    
-                    const response = await fetch(`/logs?${params.toString()}`);
-                    const data = await response.json();
-                    setGalleryLogs(data);
-                } catch (error) {
-                    setToast({ message: "Failed to fetch gallery records", type: "error" });
-                } finally {
-                    setGalleryLoading(false);
-                }
-            }, [galleryFilter, gallerySearch]);
-
-            useEffect(() => {
-                if (activeView === 'gallery') {
-                    fetchGalleryLogs();
-                }
-            }, [activeView, fetchGalleryLogs]);
 
             const handleFileUpload = (e) => {
                 if (userData.is_subscription_required) {
@@ -353,103 +278,33 @@
                 }
                 const file = e.target.files[0];
                 if (file) {
-                    setSelectedImage(file);
                     const reader = new FileReader();
                     reader.onload = (e) => {
                         setPreview(e.target.result);
-                        if (isOffline) {
-                            setPendingSyncs(prev => prev + 1);
-                            setToast({ message: "Offline. Photo captured & cached for sync.", type: "warning" });
-                            setStatus('completed');
-                            setCurrentResult({
-                                model: "OFFLINE-CAPTURE-" + Date.now().toString().slice(-4),
-                                seer2: "PENDING",
-                                status: "CACHED",
-                                verification_id: "SYNC-PENDING",
-                                is_compliant: true,
-                                gps: "Cached GPS Data",
-                                timestamp: new Date().toLocaleTimeString(),
-                                code_section: "Waiting for connection..."
-                            });
-                        } else {
-                            handleManualTrigger();
-                        }
+                        startAuditFlow();
                     };
                     reader.readAsDataURL(file);
                 }
             };
 
-            const handleManualTrigger = async (manualSeer = null) => {
-                if (!user && hasScannedAnonymously) {
-                    setToast({ message: "Limit reached. Sign in to save audits.", type: "warning" });
-                    return;
-                }
-                if (user && userData.is_subscription_required) {
-                    setShowPaywall(true);
-                    return;
-                }
-                if (isLocked) return;
-                startAuditFlow(manualSeer);
-            };
-
             const startAuditFlow = async (manualSeer = null) => {
-                // --- Loading Boundary & Waking up State ---
+                if (isLocked) return;
                 setStatus('scanning');
-                setToast({ message: "Waking up Truth Engine... (Initializing 2026 CEC Reference)", type: "info" });
                 await new Promise(r => setTimeout(r, 2000));
-                
                 setStatus('analyzing');
-                setToast({ message: "Vision Agent: Analyzing Nameplate OCR-Text...", type: "info" });
                 await new Promise(r => setTimeout(r, 1500));
 
-                // Simulation: Backend call with rate limit check
-                // In a real app, this would be an actual fetch reaching the MCP server
-                const mockBackendCall = async () => {
-                    // 15% chance to simulate a cold server tool error
-                    if (Math.random() < 0.15) {
-                        return { status: "error", code: "COLD_BOOT", message: "Truth Engine is cold. Waking up..." };
-                    }
-                    return { is_rate_limited: false, data: {} };
-                };
-
-                const response = await mockBackendCall();
-                setDebugLog(prev => [{t: new Date().toLocaleTimeString(), d: response}, ...prev].slice(0, 5));
-                
-                // --- Cold Boot Handling ---
-                if (response.status === "error" && response.code === "COLD_BOOT") {
-                    setToast({ message: "Truth Engine Cold Boot Detected... Re-initializing.", type: "warning" });
-                    await new Promise(r => setTimeout(r, 3000));
-                    // Recursive retry or just tell user to wait
-                    setToast({ message: "Engine Ready. Please re-trigger scan.", type: "info" });
-                    setStatus('idle');
-                    return;
-                }
-
-                // If the server returned a cooldown
-                if (response.is_rate_limited) {
-                    setToast({
-                        message: "Syncing with 2026 CEC Database... Please wait 10s for verification.",
-                        type: "warning"
-                    });
-                    triggerCooldown(10);
-                    setStatus('idle');
-                    return;
-                }
-
-                // Simulated Gemini 3.1 Pro Extraction
                 const extracted = {
                     id: Date.now(),
-                    timestamp: new Date().toLocaleTimeString(),
-                    model: manualSeer ? "MANUAL-OVERRIDE-TEMP" : "58SB0A070E17--12",
+                    timestamp: new Date().toLocaleString(),
+                    model: manualSeer ? "MANUAL-TEST" : "58SB0A070E17--12",
                     seer2: manualSeer !== null ? parseFloat(manualSeer) : (Math.random() > 0.5 ? 16.2 : 13.5),
-                    type: manualSeer ? "Manual Test Input" : "Air Conditioner (Split)"
+                    type: "HVAC Unit"
                 };
 
-                // Integration with @permitflow-engine logic
                 const compliance = extracted.seer2 >= 15.0;
-                
-                // Track usage & Save to DB
                 let verification_id = `PF-${Math.floor(1000 + Math.random() * 9000)}`;
+                
                 try {
                     const saveResponse = await fetch('/logs', {
                         method: 'POST',
@@ -462,87 +317,39 @@
                         })
                     });
                     const saveData = await saveResponse.json();
-                    if (saveData.verification_id) {
-                        verification_id = saveData.verification_id;
-                    }
-                    await fetchUserData(); // Refresh credits
-                } catch (err) {
-                    console.error("Failed to save log to backend", err);
-                }
+                    if (saveData.verification_id) verification_id = saveData.verification_id;
+                    await fetchUserData();
+                } catch (err) { console.error(err); }
 
                 const finalResult = {
                     ...extracted,
-                    user_email: user ? user.email : "anonymous@permitflow.pro",
-                    verification_id: verification_id,
+                    verification_id,
                     is_compliant: compliance,
                     status: compliance ? 'APPROVED' : 'REJECTED',
-                    violation: compliance ? null : `SEER2 ${extracted.seer2} fails 2026 CEC baseline (min 15.0)`,
-                    code_section: "Title 24, Part 6, Section 150.1(c)",
-                    gps: "34.0522° N, 118.2437° W" // Los Angeles
+                    gps: "34.0522° N, 118.2437° W"
                 };
 
                 setCurrentResult(finalResult);
+                setAudits(prev => [finalResult, ...prev].slice(0, 10));
                 setStatus('completed');
-                
-                if (!user) {
-                    setHasScannedAnonymously(true);
-                    localStorage.setItem('pf_anon_scan', 'true');
-                    setShowBlurredOverlay(true);
-                }
-
-                if (compliance) {
-                    confetti({
-                        particleCount: 150,
-                        spread: 70,
-                        origin: { y: 0.6 },
-                        colors: ['#00f2ff', '#facc15', '#22c55e']
-                    });
-                }
-
-                setCurrentResult(finalResult);
-                setAudits(prev => [finalResult, ...prev].slice(0, 10)); 
-                setStatus('completed');
-                
                 if (compliance) {
                     setShowSuccessOverlay(true);
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
                 }
-                
-                // Trigger global cooldown after successful scan to enforce 1/10s
                 triggerCooldown(10);
             };
 
             const downloadCertificate = async () => {
                 const element = document.getElementById('certificate-template');
                 element.style.display = 'block';
-                
-                // Keep UI locked while generating
-                triggerCooldown(10); 
-                
-                const canvas = await html2canvas(element, {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff'
-                });
-                
+                const canvas = await html2canvas(element, { scale: 2 });
                 const imgData = canvas.toDataURL('image/png');
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                const imgProps = pdf.getImageProperties(imgData);
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-                
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                pdf.save(`Compliance_Certificate_${currentResult.model}.pdf`);
-                
+                pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+                pdf.save(`Certificate_${currentResult.model}.pdf`);
                 element.style.display = 'none';
-                setPdfGenerated(true);
-                setToast({ message: "Certificate Generated & Validated", type: "success" });
-            };
-
-            const copyShareLink = (id) => {
-                const link = `${window.location.origin}/verify/${id}`;
-                navigator.clipboard.writeText(link);
-                setToast({ message: "Verification link copied to clipboard", type: "info" });
+                setToast({ message: "Certificate Downloaded", type: "success" });
             };
 
             const reset = () => {
@@ -550,96 +357,61 @@
                 setCurrentResult(null);
                 setStatus('idle');
                 setShowSuccessOverlay(false);
-                setPdfGenerated(false);
             };
+
+            const Footer = () => (
+                <footer className="py-6 px-10 border-t border-white/5 bg-black/20 backdrop-blur-sm z-20">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div className="flex items-center gap-6">
+                            <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400">Privacy Policy</button>
+                            <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400">Terms of Service</button>
+                            <span className="text-[10px] text-slate-700 font-bold uppercase tracking-widest">© 2026 PermitFlow</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full border border-white/5">Oman PDPL Compliant</span>
+                            <span className="text-[9px] text-slate-600 font-bold uppercase tracking-widest px-3 py-1 bg-white/5 rounded-full border border-white/5">Supabase ME-Central1</span>
+                        </div>
+                    </div>
+                </footer>
+            );
 
             if (!user) {
                 return (
-                    <div className="min-h-screen bg-[#0a0a0b] bg-industrial-grid flex items-center justify-center p-6 relative overflow-hidden">
-                        {/* Background Decor */}
-                        <div className="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 blur-[150px] rounded-full"></div>
-                        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-cyan-500/5 blur-[120px] rounded-full"></div>
-
-                        <motion.div 
-                            initial={{ opacity: 0, y: 30 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            className="max-w-md w-full relative z-10"
-                        >
-                            <div className="mb-12 text-center">
-                                <div className="w-16 h-16 bg-cyan-500 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-[0_0_30px_rgba(6,182,212,0.3)]">
-                                    <span className="text-2xl font-black text-black italic leading-none">PF</span>
+                    <div className="min-h-screen bg-[#0a0a0b] flex flex-col items-center justify-center p-6 bg-industrial-grid">
+                        <div className="w-full max-w-md">
+                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="industrial-card p-10 rounded-[40px] border-cyan-500/20 text-center relative overflow-hidden mb-12">
+                                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
+                                <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-8 border border-cyan-500/20 rotate-3">
+                                    <div className="text-2xl font-black text-cyan-400 -rotate-3 italic">PF</div>
                                 </div>
-                                <h1 className="text-4xl font-black text-white tracking-tighter uppercase mb-2">PermitFlow <span className="text-cyan-400">PRO</span></h1>
-                                <p className="text-slate-500 font-bold uppercase tracking-[0.3em] text-[10px]">Industrial Compliance Gateway</p>
-                            </div>
-
-                            <form onSubmit={handleLogin} className="industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md">
-                                <div className="mb-8 text-center">
-                                    <h2 className="text-xl font-bold text-white mb-2 uppercase tracking-tight">Contractor Access</h2>
-                                    <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">Magic Link Verification</p>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="space-y-2">
-                                        <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Email Address</label>
-                                        <input 
-                                            type="email"
-                                            required
-                                            placeholder="you@hvac-company.com"
-                                            value={loginEmail}
-                                            onChange={(e) => setLoginEmail(e.target.value)}
-                                            className="w-full fat-input p-6 rounded-2xl text-white font-bold text-lg focus:placeholder-transparent"
-                                        />
+                                <h1 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter italic">PermitFlow <span className="text-cyan-400">PRO</span></h1>
+                                <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-8">Industrial Compliance Gateway v3.1</p>
+                                
+                                <form onSubmit={handleLogin} className="space-y-4 text-left">
+                                    <div>
+                                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block px-2">Contractor Email</label>
+                                        <input type="email" required value={loginEmail} onChange={(e) => setLoginEmail(e.target.value)} className="w-full fat-input p-5 rounded-2xl text-white font-bold text-sm" placeholder="name@company.com" />
                                     </div>
-
-                                    <button 
-                                        type="submit"
-                                        disabled={authLoading}
-                                        className="w-full py-6 bg-cyan-500 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all active:scale-[0.98] shadow-[0_10px_30px_rgba(6,182,212,0.2)] flex items-center justify-center gap-3 group"
-                                    >
-                                        {authLoading ? (
-                                            <div className="w-5 h-5 border-3 border-black border-t-transparent rounded-full animate-spin"></div>
-                                        ) : (
-                                            <>
-                                                <span>Send Login Link</span>
-                                                <svg className="w-4 h-4 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                                            </>
-                                        )}
+                                    <div className="flex items-start gap-3 p-4 bg-white/5 rounded-2xl border border-white/5 mb-4">
+                                        <input type="checkbox" id="terms" checked={agreedToTerms} onChange={(e) => setAgreedToTerms(e.target.checked)} className="mt-1 w-4 h-4 rounded border-white/10 bg-black text-cyan-500" />
+                                        <label htmlFor="terms" className="text-[10px] leading-relaxed text-slate-500 font-bold uppercase tracking-widest cursor-pointer">
+                                            I agree to the <button type="button" onClick={() => openLegal('terms')} className="text-cyan-400 hover:underline">Terms</button> & <button type="button" onClick={() => openLegal('privacy')} className="text-cyan-400 hover:underline">Privacy Policy</button>, and understand data is stored in Oman-compliant regions.
+                                        </label>
+                                    </div>
+                                    <button type="submit" disabled={authLoading} className="w-full py-5 bg-cyan-500 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-3">
+                                        {authLoading ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : 'Access Dashboard'}
                                     </button>
-
-                                    <div className="relative py-4 flex items-center">
-                                        <div className="flex-grow border-t border-white/5"></div>
-                                        <span className="flex-shrink mx-4 text-[9px] text-slate-700 font-black uppercase tracking-widest">or</span>
-                                        <div className="flex-grow border-t border-white/5"></div>
+                                    <div className="relative py-4 flex items-center gap-4">
+                                        <div className="flex-1 h-px bg-white/5"></div>
+                                        <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">or secure sync</span>
+                                        <div className="flex-1 h-px bg-white/5"></div>
                                     </div>
-
-                                    <button 
-                                        type="button"
-                                        onClick={handleGoogleLogin}
-                                        disabled={authLoading}
-                                        className="w-full py-5 bg-white text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-slate-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3"
-                                    >
-                                        <svg className="w-5 h-5" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/><path fill="none" d="M1 1h22v22H1z"/></svg>
-                                        <span>Continue with Google</span>
-                                    </button>
-                                </div>
-
-                                <div className="mt-8 flex items-center justify-center gap-4 border-t border-white/5 pt-8">
-                                    <div className="flex -space-x-2">
-                                        {[1,2,3].map(i => (
-                                            <div key={i} className="w-6 h-6 rounded-full border-2 border-black bg-slate-800 flex items-center justify-center overflow-hidden">
-                                                <img src={`https://i.pravatar.cc/100?u=${i}`} alt="user" className="w-full h-full object-cover" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Join 400+ Pros</p>
-                                </div>
-                            </form>
-                            
-                            <p className="mt-8 text-center text-[9px] text-slate-700 font-bold uppercase tracking-widest">
-                                By signing in, you agree to our <span className="text-slate-500 hover:underline cursor-pointer">Title 24 Service Terms</span>
-                            </p>
-                        </motion.div>
+                                    <button type="button" onClick={handleGoogleLogin} className="w-full py-5 bg-white/5 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl border border-white/10 hover:bg-white/10">Continue with Google</button>
+                                </form>
+                            </motion.div>
+                            <Footer />
+                        </div>
+                        <LegalModal modal={legalModal} setLegalModal={setLegalModal} />
                     </div>
                 );
             }
@@ -647,734 +419,168 @@
             return (
                 <div className="flex h-screen bg-[#0a0a0b] overflow-hidden">
                     {/* Sidebar */}
-                    <aside className="w-80 bg-[#0d0d0f] border-r border-[#1a1a1e] flex flex-col">
-                        <div className="p-6 border-b border-[#1a1a1e]">
+                    <aside className="w-80 bg-[#0d0d0f] border-r border-white/5 flex flex-col">
+                        <div className="p-6 border-b border-white/5">
                             <div className="flex items-center gap-3 mb-1">
-                                <div className="w-8 h-8 rounded-lg bg-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.5)] flex items-center justify-center font-bold text-black italic">PF</div>
-                                <h1 className="text-xl font-bold tracking-tight">PermitFlow <span className="text-cyan-400">PRO</span></h1>
+                                <div className="w-8 h-8 rounded-lg bg-cyan-500 flex items-center justify-center font-bold text-black italic">PF</div>
+                                <h1 className="text-xl font-bold tracking-tight text-white uppercase italic">PermitFlow <span className="text-cyan-400">PRO</span></h1>
                             </div>
-                            {isOffline && (
-                                <div className="mt-2 flex items-center gap-2 px-3 py-1 bg-red-500/10 border border-red-500/20 rounded-full">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></div>
-                                    <span className="text-[8px] font-black text-red-400 uppercase tracking-widest">Offline Mode</span>
-                                </div>
-                            )}
-                            {pendingSyncs > 0 && (
-                                <div className="mt-2 flex items-center justify-between px-3 py-1 bg-cyan-500/10 border border-cyan-500/20 rounded-full">
-                                    <span className="text-[8px] font-black text-cyan-400 uppercase tracking-widest">{pendingSyncs} Pending Sync</span>
-                                    <div className="w-2 h-2 border-2 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                            )}
-                            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-2">Industrial Auditor v3.1</p>
+                            <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold mt-2">Compliance Gateway</p>
                         </div>
-                        
-                        <nav className="p-4 space-y-2">
-                            <button 
-                                onClick={() => setActiveView('dashboard')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'dashboard' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-                                <span className="text-sm font-bold uppercase tracking-widest">Dashboard</span>
+                        <nav className="p-4 space-y-2 flex-1">
+                            <button onClick={() => setActiveView('dashboard')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'dashboard' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-500 hover:text-slate-300'}`}>
+                                <span className="text-xs font-bold uppercase tracking-widest">Dashboard</span>
                             </button>
-                            <button 
-                                onClick={() => setActiveView('gallery')}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'gallery' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-500 hover:text-slate-300'}`}
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
-                                <span className="text-sm font-bold uppercase tracking-widest">Client Gallery</span>
-                            </button>
-                            <button 
-                                onClick={() => window.PermitFlowAuth.logout()}
-                                className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-slate-600 hover:text-red-400"
-                            >
-                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
-                                <span className="text-sm font-bold uppercase tracking-widest">Logout</span>
+                            <button onClick={() => setActiveView('gallery')} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeView === 'gallery' ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20' : 'text-slate-500 hover:text-slate-300'}`}>
+                                <span className="text-xs font-bold uppercase tracking-widest">Records</span>
                             </button>
                         </nav>
-
-                        <div className="px-6 py-6 border-t border-[#1a1a1e] mt-auto">
-                            <div className="bg-white/5 rounded-2xl p-4 border border-white/5 relative overflow-hidden group">
-                                <div className="flex justify-between items-center mb-2">
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Beta Credits</p>
-                                    <span className={`text-[10px] font-black ${userData.credits_remaining === 0 ? 'text-red-500 animate-pulse' : 'text-cyan-400'}`}>
-                                        {userData.credits_remaining}/10
-                                    </span>
-                                </div>
-                                <div className="h-1.5 bg-slate-800 rounded-full overflow-hidden mb-3">
-                                    <motion.div 
-                                        initial={{ width: 0 }}
-                                        animate={{ width: `${(userData.credits_used / 10) * 100}%` }}
-                                        className={`h-full ${userData.credits_remaining === 0 ? 'bg-red-500' : 'bg-cyan-500'}`}
-                                    ></motion.div>
-                                </div>
-                                <button 
-                                    onClick={() => setShowPaywall(true)}
-                                    className="w-full py-2 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 text-[9px] font-black uppercase tracking-[0.2em] rounded-lg border border-cyan-500/20 transition-all active:scale-95"
-                                >
-                                    {userData.credits_remaining === 0 ? 'Upgrade Now' : 'Get Unlimited'}
-                                </button>
-                                {userData.credits_remaining === 0 && (
-                                    <div className="absolute inset-0 bg-red-500/10 pointer-events-none animate-pulse"></div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex-1 overflow-y-auto p-4 border-t border-[#1a1a1e]">
-                            <h2 className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                <span className="w-1 h-3 bg-slate-700 rounded-full"></span>
-                                Live Site Activity
-                            </h2>
-                            <div className="space-y-3">
-                                {audits.length === 0 ? (
-                                    <div className="p-4 rounded-xl border border-dashed border-slate-800 text-slate-600 text-xs text-center">
-                                        No historical data available.
-                                    </div>
-                                ) : audits.map(audit => (
-                                    <div key={audit.id} className={`history-item relative p-3 bg-white/5 rounded-lg border border-white/5 transition-all hover:bg-white/10 ${audit.is_compliant ? 'pass' : 'fail'}`}>
-                                        <div className="flex justify-between items-start mb-1">
-                                            <span className="text-[10px] font-mono text-slate-500">{audit.timestamp}</span>
-                                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${audit.is_compliant ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'}`}>
-                                                {audit.status}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs font-semibold truncate text-slate-300">{audit.model}</p>
-                                        <p className="text-[10px] text-slate-500">SEER2: {audit.seer2}</p>
-                                    </div>
-                                ))}
+                        <div className="p-6 border-t border-white/5">
+                            <div className="bg-white/5 rounded-2xl p-4 border border-white/5 text-center">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-2 font-mono">Credits: {userData.credits_remaining}/10</p>
+                                <button onClick={() => setShowPaywall(true)} className="w-full py-2 bg-cyan-500/10 text-cyan-400 text-[9px] font-black uppercase tracking-widest rounded-lg border border-cyan-500/20">Upgrade Now</button>
                             </div>
                         </div>
                     </aside>
 
                     {/* Main Content */}
-                    <main className="flex-1 overflow-y-auto bg-gradient-to-br from-[#0a0a0b] to-[#121216] relative">
-                        {/* Job Site Header */}
-                        <header className="p-8 flex justify-between items-center sticky top-0 bg-[#0a0a0b]/80 backdrop-blur-md z-10 border-b border-white/5">
-                            <div>
-                                <h2 className="text-2xl font-bold flex items-center gap-3 uppercase tracking-tighter">
-                                    <span className="text-slate-500 font-light lowercase">view:</span> {activeView === 'dashboard' ? 'Audit Command Center' : 'Client Record Gallery'}
-                                </h2>
-                                <div className="flex items-center gap-4 mt-1">
-                                    <span className="flex items-center gap-1.5 text-[10px] text-cyan-500 font-bold uppercase tracking-[0.2em]">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 shadow-[0_0_5px_rgba(6,182,212,1)]"></div>
-                                        Main St. Residential Project
-                                    </span>
-                                </div>
-                            </div>
-                            <div className="flex gap-4">
-                                {activeView === 'gallery' && (
-                                    <div className="flex items-center gap-4 bg-white/5 p-1 rounded-full border border-white/10 px-4">
-                                        <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
-                                        <input 
-                                            type="text" 
-                                            placeholder="Search by equipment..." 
-                                            className="bg-transparent border-none text-[10px] text-white focus:ring-0 w-40 placeholder:text-slate-600 font-bold uppercase tracking-widest"
-                                            value={gallerySearch}
-                                            onChange={(e) => setGallerySearch(e.target.value)}
-                                        />
-                                    </div>
-                                )}
-                                <div className="text-right flex items-center gap-3">
-                                    <div className="text-right">
-                                        <p className="text-[10px] text-slate-500 uppercase font-bold tracking-widest mb-0.5">System status</p>
-                                        <div className="flex items-center gap-2 justify-end">
-                                            <span className="text-[10px] font-bold text-slate-400 uppercase">
-                                                {isLocked ? 'COOLDOWN' : status === 'analyzing' || status === 'scanning' ? 'PROCESSING' : 'READY'}
-                                            </span>
-                                            <div className={`w-1.5 h-1.5 rounded-full shadow-lg ${
-                                                isLocked ? 'bg-red-500 shadow-red-500/50' : 
-                                                status === 'scanning' || status === 'analyzing' ? 'bg-yellow-400 shadow-yellow-400/50 animate-pulse' : 
-                                                'bg-green-400 shadow-green-400/50'
-                                            }`}></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                    <main className="flex-1 overflow-y-auto bg-industrial-grid relative flex flex-col">
+                        <header className="p-8 border-b border-white/5 flex justify-between items-center bg-black/20 backdrop-blur-sm sticky top-0 z-10">
+                            <h2 className="text-lg font-black text-white uppercase tracking-tighter italic">{activeView}</h2>
+                            <button onClick={() => window.location.reload()} className="p-2 text-slate-500 hover:text-white">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                            </button>
                         </header>
 
-                        {activeView === 'dashboard' ? (
-                            <div className="p-8 max-w-5xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                                {/* Capture Area */}
-                                <div className="lg:col-span-12">
-                                    <div className={`industrial-card p-1 rounded-3xl overflow-hidden transition-all duration-700 ${currentResult?.status === 'REJECTED' ? 'pulse-red' : ''}`}>
-                                        <div className="bg-[#0d0d0f] rounded-[22px] p-8">
-                                            {!preview ? (
-                                                <div className={`py-20 flex flex-col items-center justify-center border-2 border-dashed rounded-2xl transition-all relative ${
-                                                    isLocked ? 'border-red-900/20 cursor-not-allowed opacity-50' : 'border-[#2d2d35] hover:border-cyan-500/50 cursor-pointer group'
-                                                }`}>
-                                                    {!isLocked && <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileUpload} disabled={isLocked} />}
-                                                    
-                                                    {isLocked ? (
-                                                        <div className="relative w-24 h-24 mb-6">
-                                                            <svg className="w-full h-full transform -rotate-90">
-                                                                <circle
-                                                                    cx="48" cy="48" r="40"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="4"
-                                                                    fill="transparent"
-                                                                    className="text-slate-800"
-                                                                />
-                                                                <circle
-                                                                    cx="48" cy="48" r="40"
-                                                                    stroke="currentColor"
-                                                                    strokeWidth="4"
-                                                                    fill="transparent"
-                                                                    strokeDasharray={2 * Math.PI * 40}
-                                                                    strokeDashoffset={2 * Math.PI * 40 * (1 - cooldownRemaining / 10)}
-                                                                    className="text-yellow-400 transition-all duration-1000 linear"
-                                                                />
-                                                            </svg>
-                                                            <div className="absolute inset-0 flex items-center justify-center font-bold text-yellow-400 text-lg">
-                                                                {cooldownRemaining}s
-                                                            </div>
-                                                        </div>
-                                                    ) : (
-                                                        <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                                                            <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                                        </div>
-                                                    )}
-                                                    
-                                                    <p className={`text-xl font-bold tracking-tight mb-2 ${isLocked ? 'text-slate-600' : ''}`}>
-                                                        {isLocked ? 'System Cooling Down' : 'Initialize Smart-Capture'}
-                                                    </p>
-                                                    <p className="text-slate-500 text-sm">
-                                                        {isLocked ? 'CEC Data Synchronization in Progress' : 'Drop HVAC nameplate photo/electrical panel'}
-                                                    </p>
-
-                                                    {!isLocked && (
-                                                        <div className="mt-8 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
-                                                            <div className="h-px w-32 bg-white/10"></div>
-                                                            
-                                                            <div className="flex flex-col items-center gap-2">
-                                                                <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-2">Mock Mode: Manual Audit</p>
-                                                                <button 
-                                                                    onClick={() => handleManualTrigger(16.0)}
-                                                                    className="group relative px-10 py-4 bg-hazard-yellow text-black font-black text-[11px] uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_50px_rgba(250,204,21,0.4)]"
-                                                                >
-                                                                    Test Scan (16.0 SEER2)
-                                                                    <div className="absolute inset-0 rounded-full border-2 border-black/10 scale-105 opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                                                                </button>
-                                                                <p className="text-[9px] text-slate-600 italic mt-2">Verified bypassing Vision OCR for UI testing</p>
-                                                            </div>
-
-                                                            <div className="flex gap-6 opacity-40 hover:opacity-100 transition-opacity">
-                                                                <button onClick={() => handleManualTrigger(13.5)} className="text-[9px] text-red-500 font-bold hover:underline uppercase tracking-widest">[Fail Test]</button>
-                                                                <button onClick={() => handleManualTrigger(18.2)} className="text-[9px] text-green-500 font-bold hover:underline uppercase tracking-widest">[Ultra-Pass Test]</button>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
-                                                    <div className="relative aspect-video bg-[#0a0a0b] rounded-xl overflow-hidden border border-white/5">
-                                                        <img src={preview} className="w-full h-full object-cover opacity-60" />
-                                                        {status === 'scanning' && <div className="scanning-line"></div>}
-                                                        {status === 'analyzing' && (
-                                                            <div className="absolute inset-0 bg-cyan-900/10 flex items-center justify-center backdrop-blur-[2px]">
-                                                                <div className="flex flex-col items-center">
-                                                                    <div className="w-12 h-12 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin"></div>
-                                                                    <p className="text-cyan-400 font-bold tracking-widest mt-4 text-xs animate-pulse underline underline-offset-8">GEMINI 3.1 PRO ANALYZING...</p>
-                                                                </div>
-                                                            </div>
-                                                        )}
-                                                    </div>
-
-                                                    <div>
-                                                        <div className="flex justify-between items-center mb-6 text-slate-300">
-                                                            <h3 className="text-sm font-bold uppercase tracking-widest text-slate-500 italic">Extraction Phase</h3>
-                                                            {status === 'completed' && (
-                                                                <button onClick={reset} className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 px-3 py-1 border border-cyan-400 rounded-full transition-colors">NEW SCAN</button>
-                                                            )}
-                                                        </div>
-
-                                                        {status === 'scanning' && (
-                                                            <div className="space-y-4">
-                                                                <div className="h-2 bg-slate-800 rounded-full overflow-hidden">
-                                                                    <div className="h-full bg-cyan-500 w-1/3 animate-[loading_2s_infinite]"></div>
-                                                                </div>
-                                                                <p className="text-xs text-slate-500 uppercase font-bold tracking-widest animate-pulse">Running Optical Diagnostic...</p>
-                                                            </div>
-                                                        )}
-
-                                                        {currentResult && (
-                                                            <div className="relative">
-                                                                <div className={`space-y-6 transition-all duration-700 ${showBlurredOverlay ? 'blur-2xl scale-[0.98] pointer-events-none grayscale opacity-30 select-none' : ''}`}>
-                                                                    <div className="grid grid-cols-2 gap-4">
-                                                                        <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
-                                                                            <p className="text-[10px] uppercase font-bold text-slate-600 mb-1">Model ID</p>
-                                                                            <p className="mono text-xs text-cyan-300">{currentResult.model}</p>
-                                                                        </div>
-                                                                        <div className="bg-white/[0.03] p-4 rounded-xl border border-white/5">
-                                                                            <p className="text-[10px] uppercase font-bold text-slate-600 mb-1">Efficiency</p>
-                                                                            <p className="text-lg font-bold">{currentResult.seer2} <span className="text-[10px] text-slate-500 font-normal ml-1">SEER2</span></p>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div className={`p-6 rounded-xl border flex gap-4 ${currentResult.is_compliant ? 'bg-green-500/5 border-green-500/20 text-green-400' : 'bg-red-500/5 border-red-500/20 text-red-100'}`}>
-                                                                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center shrink-0 ${currentResult.is_compliant ? 'bg-green-500/20' : 'bg-red-500/20'}`}>
-                                                                            {currentResult.is_compliant 
-                                                                                ? <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd"/></svg>
-                                                                                : <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
-                                                                            }
-                                                                        </div>
-                                                                        <div>
-                                                                            <h4 className="font-bold text-sm tracking-widest uppercase mb-1">{currentResult.status}</h4>
-                                                                            <div className="flex items-center gap-2 mb-2">
-                                                                                <span className="text-[10px] bg-cyan-500/10 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/20 font-mono">ID: {currentResult.verification_id}</span>
-                                                                            </div>
-                                                                            <p className="text-xs leading-relaxed opacity-80">
-                                                                                {currentResult.is_compliant 
-                                                                                    ? "Unit exceeds 2026 CEC floor. Record stored in session." 
-                                                                                    : currentResult.violation}
-                                                                            </p>
-                                                                            <div className="mt-4 flex flex-wrap gap-2">
-                                                                                {currentResult.is_compliant && (
-                                                                                    <button 
-                                                                                        onClick={downloadCertificate}
-                                                                                        className="px-4 py-2 bg-green-500/10 text-green-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-green-500/20"
-                                                                                    >
-                                                                                        Preview Certificate
-                                                                                    </button>
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
-                                                                    </div>
-                                                                </div>
-
-                                                                {showBlurredOverlay && (
-                                                                    <div className="absolute inset-0 z-30 flex items-center justify-center p-4">
-                                                                        <motion.div 
-                                                                            initial={{ scale: 0.9, opacity: 0 }}
-                                                                            animate={{ scale: 1, opacity: 1 }}
-                                                                            className="max-w-xs w-full bg-[#161618]/90 backdrop-blur-3xl p-8 rounded-[32px] border border-cyan-500/30 text-center shadow-2xl"
-                                                                        >
-                                                                            <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
-                                                                                <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-                                                                            </div>
-                                                                            <h3 className="text-lg font-black text-white mb-2 uppercase tracking-tight">Audit Captured!</h3>
-                                                                            <p className="text-slate-400 text-[11px] mb-8 leading-relaxed">
-                                                                                Sign in with Google to <span className="text-white font-bold">save this audit</span> and unlock 9 more free credits.
-                                                                            </p>
-                                                                            <button 
-                                                                                onClick={handleGoogleLogin}
-                                                                                className="w-full py-4 bg-white text-black font-black text-[10px] uppercase tracking-[0.2em] rounded-xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 shadow-xl active:scale-95 mb-4"
-                                                                            >
-                                                                                <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                                                                                <span>Sync Google</span>
-                                                                            </button>
-                                                                            <button 
-                                                                                onClick={() => setShowBlurredOverlay(false)}
-                                                                                className="text-[9px] text-slate-600 font-bold uppercase tracking-widest hover:text-white transition-colors"
-                                                                            >
-                                                                                Dismiss
-                                                                            </button>
-                                                                        </motion.div>
-                                                                    </div>
-                                                                )}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            )}
+                        <div className="p-10 max-w-5xl mx-auto w-full flex-1">
+                            {activeView === 'dashboard' ? (
+                                <div className="industrial-card p-12 rounded-[40px] border-white/5 text-center">
+                                    {!preview ? (
+                                        <div className="py-20 border-2 border-dashed border-white/5 rounded-3xl relative group">
+                                            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileUpload} />
+                                            <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-cyan-500/20 transition-colors">
+                                                <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                            </div>
+                                            <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight italic">Ready to Capture</h2>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Drop HVAC Plate Image Here</p>
                                         </div>
-                                    </div>
-                                </div>
-                            </div>
-                            </div>
-                        ) : (
-                            <div className="p-8 max-w-7xl mx-auto animate-in fade-in slide-in-from-bottom-4 duration-700">
-                                {/* Gallery Controls */}
-                                <div className="flex justify-between items-center mb-8">
-                                    <div className="flex gap-2">
-                                        {['ALL', 'APPROVED', 'REJECTED'].map(filter => (
-                                            <button 
-                                                key={filter}
-                                                onClick={() => setGalleryFilter(filter)}
-                                                className={`px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${
-                                                    galleryFilter === filter 
-                                                    ? 'bg-cyan-500 text-black' 
-                                                    : 'bg-white/5 text-slate-500 hover:bg-white/10 border border-white/5'
-                                                }`}
-                                            >
-                                                {filter === 'REJECTED' ? 'Requires Attention' : filter}
-                                            </button>
-                                        ))}
-                                    </div>
-                                    <button 
-                                        onClick={fetchGalleryLogs} 
-                                        className="text-[10px] font-bold text-slate-500 hover:text-white flex items-center gap-2 uppercase tracking-widest"
-                                    >
-                                        <svg className={`w-3 h-3 ${galleryLoading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                        Refresh Data
-                                    </button>
-                                </div>
-
-                                {/* Bento Grid */}
-                                <div className="bento-grid">
-                                    {galleryLoading ? (
-                                        Array.from({length: 6}).map((_, i) => (
-                                            <div key={i} className="industrial-card p-6 rounded-2xl h-48 skeleton opacity-20"></div>
-                                        ))
-                                    ) : galleryLogs.length === 0 ? (
-                                        <div className="col-span-full py-20 text-center border-2 border-dashed border-white/5 rounded-3xl">
-                                            <p className="text-slate-600 font-bold uppercase tracking-[0.2em] italic">No site records matching criteria</p>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
+                                            <div className="relative aspect-square rounded-2xl overflow-hidden border border-white/5 bg-black">
+                                                <img src={preview} className={`w-full h-full object-cover ${status !== 'completed' ? 'opacity-40 grayscale animate-pulse' : ''}`} />
+                                                {status !== 'completed' && <div className="absolute inset-0 flex items-center justify-center text-cyan-400 font-black text-xs uppercase tracking-widest">{status}...</div>}
+                                            </div>
+                                            <div>
+                                                <h2 className="text-3xl font-black text-white mb-6 uppercase tracking-tighter italic">Audit Summary</h2>
+                                                {status === 'completed' && currentResult && (
+                                                    <div className="space-y-6">
+                                                        <div className={`p-6 rounded-2xl border ${currentResult.is_compliant ? 'bg-green-500/5 border-green-500/20 text-green-400' : 'bg-red-500/5 border-red-500/20 text-red-400'}`}>
+                                                            <h3 className="font-black text-sm uppercase tracking-widest mb-1 italic">{currentResult.status}</h3>
+                                                            <p className="text-[10px] opacity-70 font-bold uppercase tracking-widest">Model: {currentResult.model} | SEER2: {currentResult.seer2}</p>
+                                                            <p className="text-[9px] mt-2 opacity-50 font-mono tracking-tighter">ID: {currentResult.verification_id}</p>
+                                                        </div>
+                                                        <div className="grid grid-cols-2 gap-3">
+                                                            <button onClick={() => downloadCertificate()} className="py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-2">Export PDF</button>
+                                                            <button onClick={reset} className="py-4 bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-xl hover:text-white border border-white/5">Reset</button>
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    ) : galleryLogs.map(log => (
-                                        <motion.div 
-                                            key={log.id}
-                                            whileHover={{ y: -5 }}
-                                            onClick={() => setSelectedAudit(log)}
-                                            className="industrial-card p-6 rounded-2xl cursor-pointer group hover:border-cyan-500/30 transition-all active:scale-[0.98]"
-                                        >
+                                    )}
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {audits.map(audit => (
+                                        <div key={audit.id} className="industrial-card p-6 rounded-2xl border-white/5 hover:border-cyan-500/30 transition-all cursor-pointer group">
                                             <div className="flex justify-between items-start mb-6">
-                                                <div className={`p-3 rounded-lg ${log.status === 'APPROVED' ? 'bg-green-500/10 text-green-400' : 'bg-red-500/10 text-red-400'}`}>
-                                                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a2 2 0 00-1.96 1.414l-.727 2.903a2 2 0 01-1.928 1.517H8.5a2 2 0 01-1.928-1.517l-.727-2.903a2 2 0 00-1.96-1.414l-2.387.477a2 2 0 00-1.022.547l-.37 1.11a2 2 0 00.323 2.158l.842 1.05a2 2 0 003.111-.115L9 18l1.5-1.5L12 18l1.5-1.5L15 18l1.05-1.05a2 2 0 003.111.115l.842-1.05a2 2 0 00.323-2.158l-.37-1.11z"/>
-                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M10 8V6a2 2 0 012-2h0a2 2 0 012 2v2M6 10h12v7a1 1 0 01-1 1H7a1 1 0 01-1-1v-7z"/>
-                                                    </svg>
+                                                <div className={`px-2 py-1 rounded text-[9px] font-black uppercase tracking-widest border ${audit.is_compliant ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'}`}>
+                                                    {audit.status}
                                                 </div>
-                                                <span className={`text-[9px] font-black px-2 py-1 rounded border uppercase tracking-widest ${
-                                                    log.status === 'APPROVED' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 'bg-red-500/10 text-red-400 border-red-500/20'
-                                                }`}>
-                                                    {log.status}
-                                                </span>
+                                                <span className="text-[9px] text-slate-700 font-mono">{audit.timestamp}</span>
                                             </div>
-                                            <h3 className="text-xs font-black uppercase tracking-widest text-white mb-2 truncate group-hover:text-cyan-400 transition-colors">{log.equipment_type}</h3>
-                                            <div className="space-y-1">
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex justify-between">
-                                                    Efficiency: <span className="text-slate-300">{log.seer2} SEER2</span>
-                                                </p>
-                                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest flex justify-between">
-                                                    Code: <span className="text-slate-300 font-mono">PF-{log.id.toString().padStart(5, '0')}</span>
-                                                </p>
-                                                <p className="text-[9px] text-slate-600 italic mt-4">{new Date(log.timestamp).toLocaleDateString()}</p>
-                                            </div>
-                                        </motion.div>
+                                            <h4 className="text-sm font-black text-white uppercase tracking-tighter mb-1 truncate">{audit.model}</h4>
+                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest font-mono">SEER2: {audit.seer2}</p>
+                                        </div>
                                     ))}
+                                    {audits.length === 0 && <p className="col-span-full text-center py-20 text-slate-600 font-bold uppercase tracking-widest text-[10px]">No records found.</p>}
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Background Overlay */}
-                        <div className="fixed inset-0 pointer-events-none opacity-20" style={{backgroundImage: 'radial-gradient(#2d2d35 0.5px, transparent 0.5px)', backgroundSize: '24px 24px'}}></div>
+                            )}
+                        </div>
+                        <Footer />
                     </main>
 
-                    {/* Hidden Certificate Template */}
-                    {currentResult && (
-                        <div id="certificate-template" style={{display: 'none', width: '800px', padding: '60px', color: '#000', backgroundColor: '#fff', border: '20px solid #f8fafc'}}>
-                            <div style={{border: '2px solid #000', padding: '40px', position: 'relative'}}>
-                                <div style={{textAlign: 'center', marginBottom: '40px'}}>
-                                    <h1 style={{fontSize: '32px', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '2px', marginBottom: '10px'}}>Official Title 24 Self-Certification Audit</h1>
-                                    <p style={{fontSize: '14px', color: '#666'}}>California Energy Commission | Residential Efficiency Compliance</p>
-                                </div>
-                                
-                                <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '40px'}}>
-                                    <div>
-                                        <h3 style={{fontSize: '12px', fontWeight: 'bold', textTransform: 'uppercase', color: '#999', marginBottom: '10px'}}>Audit Details</h3>
-                                        <p style={{marginBottom: '5px'}}><strong>Timestamp:</strong> {new Date().toLocaleString()}</p>
-                                        <p style={{marginBottom: '5px'}}><strong>GPS Location:</strong> {currentResult.gps}</p>
-                                        <p style={{marginBottom: '5px'}}><strong>Verification ID:</strong> {currentResult.verification_id}</p>
-                                        <p style={{marginBottom: '5px'}}><strong>Code Section:</strong> {currentResult.code_section}</p>
-                                        <p style={{marginBottom: '5px'}}><strong>Model ID:</strong> {currentResult.model}</p>
-                                        <p style={{marginBottom: '5px'}}><strong>SEER2:</strong> {currentResult.seer2}</p>
-                                        <p style={{color: 'green', fontWeight: 'bold', marginTop: '10px'}}>STATUS: COMPLIANT / APPROVED</p>
+                    <AnimatePresence>
+                        {showSuccessOverlay && (
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-8 overflow-hidden" onClick={() => setShowSuccessOverlay(false)}>
+                                <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="max-w-md w-full text-center" onClick={e => e.stopPropagation()}>
+                                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-8 border-2 border-green-500/50 pulse-green-seal">
+                                        <svg className="w-12 h-12 text-green-400" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"/></svg>
                                     </div>
-                                    <div style={{textAlign: 'right'}}>
-                                        <img src={preview} style={{width: '200px', height: '120px', objectFit: 'cover', border: '1px solid #ddd'}} />
-                                        <p style={{fontSize: '10px', color: '#999', marginTop: '5px'}}>Evidence Capture: Unit Nameplate</p>
-                                    </div>
-                                </div>
+                                    <h2 className="text-4xl font-black text-white mb-2 tracking-tighter uppercase italic">Audit Success</h2>
+                                    <p className="text-slate-500 font-bold uppercase tracking-widest mb-8 text-[10px]">Verification ID: {currentResult?.verification_id}</p>
+                                    <button onClick={() => setShowSuccessOverlay(false)} className="w-full py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200">Done</button>
+                                </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                                <div style={{textAlign: 'center', marginTop: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end'}}>
-                                    <div style={{textAlign: 'left'}}>
-                                        <p style={{fontSize: '10px', fontWeight: 'bold', textTransform: 'uppercase', color: '#999'}}>Digital Seal</p>
-                                        <div style={{width: '60px', height: '60px', border: '2px solid green', borderRadius: '50%', display: 'flex', itemsCenter: 'center', justifyContent: 'center', color: 'green', fontSize: '20px', fontWeight: 'bold', marginTop: '10px'}}>✓</div>
-                                        <p style={{fontSize: '12px', fontWeight: 'bold', marginTop: '10px'}}>Verified by PermitFlow AI</p>
-                                    </div>
-                                    <div style={{textAlign: 'right'}}>
-                                        <div style={{width: '80px', height: '80px', background: '#000', padding: '5px', display: 'inline-block'}}>
-                                            <div style={{width: '100%', height: '100%', background: '#fff', display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gridTemplateRows: 'repeat(4, 1fr)', gap: '2px'}}>
-                                                <div style={{background: '#000'}}></div><div style={{background: '#fff'}}></div><div style={{background: '#000'}}></div><div style={{background: '#000'}}></div>
-                                                <div style={{background: '#fff'}}></div><div style={{background: '#000'}}></div><div style={{background: '#fff'}}></div><div style={{background: '#fff'}}></div>
-                                                <div style={{background: '#000'}}></div><div style={{background: '#fff'}}></div><div style={{background: '#000'}}></div><div style={{background: '#fff'}}></div>
-                                                <div style={{background: '#000'}}></div><div style={{background: '#000'}}></div><div style={{background: '#fff'}}></div><div style={{background: '#000'}}></div>
-                                            </div>
-                                        </div>
-                                        <p style={{fontSize: '8px', color: '#999', marginTop: '5px'}}>SCAN TO VERIFY RECORD</p>
-                                        <p style={{fontSize: '9px', color: '#ccc', fontStyle: 'italic'}}>Auth-ID: {Math.random().toString(36).substring(2, 15).toUpperCase()}</p>
-                                    </div>
-                                </div>
-                                
-                                <div style={{position: 'absolute', bottom: '10px', left: '10px', fontSize: '8px', color: '#eee'}}>
-                                    PermitFlow Pro Industrial Auditor v3.1 | Autonomous Regulatory System
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Debug HUD */}
-                    <div className="fixed bottom-0 left-0 right-0 bg-black/90 border-t border-white/10 p-4 font-mono text-[10px] text-cyan-400 z-[100] max-h-32 overflow-y-auto">
-                        <div className="flex justify-between items-center mb-2">
-                            <span className="font-bold uppercase tracking-widest text-white">@permitflow-engine Debug HUD</span>
-                            <button onClick={() => setDebugLog([])} className="text-slate-500 hover:text-white underline">CLEAR</button>
-                        </div>
-                        {debugLog.length === 0 ? <p className="opacity-50 italic">No activity detected...</p> : 
-                            debugLog.map((log, i) => (
-                                <div key={i} className="mb-1 border-l border-cyan-500/30 pl-2">
-                                    <span className="text-slate-500">[{log.t}]</span> {JSON.stringify(log.d)}
-                                </div>
-                            ))
-                        }
-                    </div>
-
-                    {/* Toast Notification */}
                     <AnimatePresence>
                         {toast && (
-                            <motion.div
-                                initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.9 }}
-                                className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 px-6 py-4 toast-glass rounded-2xl flex items-center gap-4 min-w-[400px]"
-                            >
-                                <div className="w-10 h-10 bg-yellow-400/20 rounded-full flex items-center justify-center">
-                                    <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
-                                </div>
-                                <div className="flex-1">
-                                    <p className="text-sm font-semibold text-white">{toast.message}</p>
-                                    <div className="w-full bg-slate-800 h-1 mt-2 rounded-full overflow-hidden">
-                                        <motion.div 
-                                            initial={{ width: "100%" }}
-                                            animate={{ width: "0%" }}
-                                            transition={{ duration: 10, ease: "linear" }}
-                                            className="bg-yellow-400 h-full"
-                                        />
-                                    </div>
-                                </div>
-                                <button onClick={() => setToast(null)} className="text-slate-500 hover:text-white">
-                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+                            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[500] px-8 py-5 bg-[#121214] border border-cyan-500/30 rounded-2xl shadow-2xl flex items-center gap-6">
+                                <p className="text-[10px] font-black text-white uppercase tracking-[0.2em]">{toast.message}</p>
+                                <button onClick={() => setToast(null)} className="text-slate-600 hover:text-white">✕</button>
                             </motion.div>
                         )}
                     </AnimatePresence>
 
-                    {/* Success Overlay */}
-                    <AnimatePresence>
-                        {showSuccessOverlay && currentResult && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 z-[200] success-overlay flex items-center justify-center p-8 text-center"
-                            >
-                                <motion.div 
-                                    initial={{ scale: 0.8, y: 20 }}
-                                    animate={{ scale: 1, y: 0 }}
-                                    className="max-w-md w-full"
-                                >
-                                    <div className="mb-8 relative inline-block">
-                                        <div className="w-32 h-32 bg-green-500/20 rounded-full flex items-center justify-center pulse-green-seal border-2 border-green-500/50">
-                                            <svg className="w-16 h-16 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"/>
-                                            </svg>
-                                        </div>
-                                        <div className="absolute -bottom-2 -right-2 bg-hazard-yellow text-black text-[10px] font-black px-2 py-1 rounded-md rotate-12 shadow-xl border border-black/10">
-                                            CEC VERIFIED
-                                        </div>
-                                    </div>
-                                    
-                                    <h2 className="text-4xl font-black mb-2 tracking-tighter text-white">AUDIT SUCCESS</h2>
-                                    <p className="text-slate-400 mb-8 uppercase tracking-[0.2em] text-[10px] font-bold">Official Title 24 Compliance Detected</p>
-                                    
-                                    <div className="industrial-card p-6 rounded-2xl mb-8 border-green-500/30">
-                                        <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Digital Verification ID</p>
-                                        <p className="text-2xl font-mono text-cyan-400 tracking-tighter">{currentResult.verification_id}</p>
-                                    </div>
-
-                                    <div className="flex flex-col gap-3">
-                                        <button 
-                                            onClick={() => setShowSuccessOverlay(false)}
-                                            className="w-full py-4 bg-white text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-slate-200 transition-colors"
-                                        >
-                                            View Audit Details
-                                        </button>
-                                        <button 
-                                            onClick={() => { downloadCertificate(); setShowSuccessOverlay(false); }}
-                                            className="w-full py-4 bg-green-500 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-green-600 transition-colors"
-                                        >
-                                            Export Certificate
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Side Drawer (Side-over) */}
-                    <AnimatePresence>
-                        {selectedAudit && (
-                            <>
-                                <motion.div 
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    exit={{ opacity: 0 }}
-                                    onClick={() => setSelectedAudit(null)}
-                                    className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[250]"
-                                />
-                                <motion.div 
-                                    initial={{ x: '100%' }}
-                                    animate={{ x: 0 }}
-                                    exit={{ x: '100%' }}
-                                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                                    className="fixed right-0 top-0 bottom-0 w-full max-w-lg z-[300] side-drawer p-8 flex flex-col"
-                                >
-                                    <div className="flex justify-between items-center mb-12">
-                                        <div>
-                                            <h2 className="text-2xl font-black uppercase tracking-tighter text-white">Audit Specs</h2>
-                                            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.2em]">Full Regulatory Breakdown</p>
-                                        </div>
-                                        <button onClick={() => setSelectedAudit(null)} className="p-3 bg-white/5 rounded-full text-slate-400 hover:text-white border border-white/5">
-                                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                        </button>
-                                    </div>
-
-                                    <div className="flex-1 space-y-8 overflow-y-auto pr-4">
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <div className="industrial-card p-6 rounded-2xl bg-white/[0.02]">
-                                                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Status</p>
-                                                <p className={`text-sm font-black uppercase tracking-widest ${selectedAudit.status === 'APPROVED' ? 'text-green-400' : 'text-red-400'}`}>{selectedAudit.status}</p>
-                                            </div>
-                                            <div className="industrial-card p-6 rounded-2xl bg-white/[0.02]">
-                                                <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">Efficiency</p>
-                                                <p className="text-sm font-black text-white">{selectedAudit.seer2} SEER2</p>
-                                            </div>
-                                        </div>
-
-                                        <div className="industrial-card p-8 rounded-3xl border-white/5">
-                                            <h4 className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-6 border-b border-white/5 pb-2">Technical Extraction</h4>
-                                            <div className="space-y-6">
-                                                <div>
-                                                    <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest mb-1">Equipment Type</p>
-                                                    <p className="text-sm text-slate-300 font-bold uppercase tracking-widest">{selectedAudit.equipment_type}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest mb-1">Verification Code</p>
-                                                    <p className="text-sm text-cyan-400 font-mono tracking-tighter">PF-{selectedAudit.id.toString().padStart(5, '0')}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest mb-1">Timestamp</p>
-                                                    <p className="text-sm text-slate-300">{new Date(selectedAudit.timestamp).toLocaleString()}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-[9px] text-slate-600 uppercase font-bold tracking-widest mb-1">Target Compliance</p>
-                                                    <p className="text-xs text-slate-400 uppercase tracking-widest">Title 24, Part 6, Sec 150.1(c)</p>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div className="aspect-video bg-black/40 rounded-2xl border border-white/5 flex items-center justify-center p-8 text-center">
-                                            <div>
-                                                <svg className="w-12 h-12 text-slate-700 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
-                                                <p className="text-[10px] text-slate-600 uppercase font-bold">Image evidence not stored in local DB</p>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="pt-8 mt-auto border-t border-white/5 flex flex-col gap-3">
-                                        <button 
-                                            onClick={() => {
-                                                setCurrentResult({
-                                                    model: selectedAudit.equipment_type,
-                                                    seer2: selectedAudit.seer2,
-                                                    status: selectedAudit.status,
-                                                    verification_id: `PF-${selectedAudit.id.toString().padStart(5, '0')}`,
-                                                    is_compliant: selectedAudit.status === 'APPROVED',
-                                                    gps: "34.0522° N, 118.2437° W",
-                                                    timestamp: new Date(selectedAudit.timestamp).toLocaleTimeString(),
-                                                    code_section: "Title 24, Part 6, Section 150.1(c)"
-                                                });
-                                                downloadCertificate();
-                                            }}
-                                            className="w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-colors flex items-center justify-center gap-3"
-                                        >
-                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                                            Re-download PDF
-                                        </button>
-                                        <button 
-                                            onClick={() => copyShareLink(selectedAudit.id)}
-                                            className="w-full py-4 bg-white/5 text-white font-black text-xs uppercase tracking-widest rounded-xl hover:bg-white/10 border border-white/10 transition-colors"
-                                        >
-                                            Copy Share Link
-                                        </button>
-                                    </div>
-                                </motion.div>
-                            </>
-                        )}
-                    </AnimatePresence>
-
-                    {/* Subscription Paywall Modal */}
                     <AnimatePresence>
                         {showPaywall && (
-                            <motion.div 
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="fixed inset-0 bg-[#0a0a0b]/90 backdrop-blur-xl z-[500] flex items-center justify-center p-6"
-                            >
-                                <motion.div 
-                                    initial={{ scale: 0.9, y: 20 }}
-                                    animate={{ scale: 1, y: 0 }}
-                                    exit={{ scale: 0.9, y: 20 }}
-                                    className="max-w-md w-full industrial-card p-10 rounded-[32px] border-cyan-500/30 text-center relative overflow-hidden"
-                                >
-                                    {/* Decoration */}
-                                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none"></div>
-                                    
-                                    <div className="w-20 h-20 bg-cyan-500/20 rounded-3xl flex items-center justify-center mx-auto mb-8 border border-cyan-500/30 rotate-12">
-                                        <svg className="w-10 h-10 text-cyan-400 -rotate-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                    </div>
-
-                                    <h2 className="text-3xl font-black text-white mb-4 tracking-tighter uppercase">Upgrade to PRO</h2>
-                                    <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-                                        Don't risk a Title 24 violation. Get <span className="text-white font-bold">unlimited audits</span> and <span className="text-white font-bold">PDF certificates</span> for <span className="text-cyan-400 font-bold">$99/mo</span>.
-                                    </p>
-
-                                    <div className="space-y-4 mb-8">
-                                        {[
-                                            "Unlimited Compliance Scans",
-                                            "Export Official Certificates",
-                                            "Client Audit Gallery Access",
-                                            "Offline Mode & Native PWA"
-                                        ].map((feature, i) => (
-                                            <div key={i} className="flex items-center gap-3 text-xs text-slate-300 font-bold uppercase tracking-widest text-left px-4">
-                                                <svg className="w-4 h-4 text-green-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7"/></svg>
-                                                {feature}
-                                            </div>
-                                        ))}
-                                    </div>
-
-                                    <button 
-                                        onClick={() => {
-                                            // Paddle passthrough vibe with user_id
-                                            console.log(`[Paddle] Checkout for ${user.email} (ID: ${user.id})`);
-                                            window.open(`https://buy.paddle.com/99-pro?email=${user.email}&passthrough=${user.id}`, '_blank');
-                                        }}
-                                        className="w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 mb-4 transition-all"
-                                    >
-                                        Subscribe via Paddle
-                                    </button>
-
-                                    {!userData.is_subscription_required && (
-                                        <button 
-                                            onClick={() => setShowPaywall(false)}
-                                            className="text-[10px] text-slate-600 font-bold uppercase tracking-widest hover:text-white transition-colors"
-                                        >
-                                            Continue with {userData.credits_remaining} Free Records
-                                        </button>
-                                    )}
+                            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[600] flex items-center justify-center p-6" onClick={() => setShowPaywall(false)}>
+                                <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="industrial-card max-w-md w-full p-10 rounded-[32px] text-center" onClick={e => e.stopPropagation()}>
+                                    <h2 className="text-3xl font-black text-white mb-4 uppercase italic">Upgrade to PRO</h2>
+                                    <p className="text-slate-400 mb-8 text-sm leading-relaxed">Unlimited audits and PDF certificates for <span className="text-cyan-400 font-bold">$99/mo</span>.</p>
+                                    <button onClick={() => window.open(`https://buy.paddle.com/99-pro?email=${user.email}`, '_blank')} className="w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg">Subscribe via Paddle</button>
+                                    <button onClick={() => setShowPaywall(false)} className="mt-4 text-[10px] text-slate-500 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
                                 </motion.div>
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    <div id="certificate-template" style={{ display: 'none', width: '800px', padding: '60px', background: 'white', color: 'black' }}>
+                        <div style={{ border: '10px solid #06b6d4', padding: '40px' }}>
+                            <h1 style={{ textAlign: 'center', fontSize: '28pt', fontWeight: '900', color: 'black', textTransform: 'uppercase', marginBottom: '40px' }}>Compliance Certificate</h1>
+                            <div style={{ marginBottom: '40px', fontSize: '14pt' }}>
+                                <p><strong>Model:</strong> {currentResult?.model}</p>
+                                <p><strong>Efficiency:</strong> {currentResult?.seer2} SEER2</p>
+                                <p><strong>Status:</strong> {currentResult?.status}</p>
+                                <p><strong>Verification ID:</strong> {currentResult?.verification_id}</p>
+                                <p><strong>Timestamp:</strong> {currentResult?.timestamp}</p>
+                                <p><strong>GPS:</strong> {currentResult?.gps}</p>
+                            </div>
+                            <div style={{ padding: '20px', background: '#f8fafc', border: '1px solid #e2e8f0' }}>
+                                <p style={{ fontSize: '10pt', color: '#64748b' }}>This certificate validates that the specified equipment meets the Title 24 compliance standards as analyzed by PermitFlow Pro's Truth Engine.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <LegalModal modal={legalModal} setLegalModal={setLegalModal} />
+                </div>
+            );
+        }
+
+        function LegalModal({ modal, setLegalModal }) {
+            if (!modal || !modal.show) return null;
+            return (
+                <div className="fixed inset-0 z-[1000] bg-black/95 backdrop-blur-xl flex items-center justify-center p-6" onClick={() => setLegalModal({ ...modal, show: false })}>
+                    <div className="industrial-card max-w-2xl w-full max-h-[80vh] overflow-y-auto p-12 relative" onClick={e => e.stopPropagation()}>
+                        <button onClick={() => setLegalModal({ ...modal, show: false })} className="absolute top-6 right-6 text-slate-500 hover:text-white p-2">
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                        <div className="prose prose-invert max-w-none">
+                            {modal.content ? <div dangerouslySetInnerHTML={{ __html: modal.content }} /> : <p className="animate-pulse text-cyan-400 font-bold uppercase tracking-widest text-xs">Loading Legal Docs...</p>}
+                        </div>
+                    </div>
                 </div>
             );
         }
@@ -1382,11 +588,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    <style>
-        @keyframes loading {
-            0% { transform: translateX(-100%); }
-            100% { transform: translateX(300%); }
-        }
-    </style>
 </body>
 </html>
