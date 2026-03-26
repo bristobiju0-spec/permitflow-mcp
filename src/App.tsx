@@ -466,7 +466,7 @@ export default function App() {
 
                             <a 
                                 href={`${pricing.professional.gumroad_url}?email=${user?.email}`} 
-                                className="gumroad-button w-full py-5 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg block mb-4"
+                                className="gumroad-button w-full py-5 text-black font-black text-xs uppercase tracking-widest rounded-2xl bg-cyan-500 hover:bg-cyan-400 transition-all shadow-lg block mb-4 active:scale-[0.98] md:py-6"
                                 target="_blank" 
                                 rel="noopener noreferrer"
                             >
