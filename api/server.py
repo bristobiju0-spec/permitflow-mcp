@@ -170,10 +170,9 @@ async def get_user_account(email: str = "guest@permitflow.pro"):
     is_subscription_required = credits_used >= 10 or days_since_signup > 30
     if user_data['is_pro']: is_subscription_required = False
 
-    return {
         "email": user_data['email'],
         "credits_used": credits_used,
-        "credits_remaining": max(0, 10 - credits_used),
+        "credits_remaining": 9999 if user_data['is_pro'] else max(0, 10 - credits_used),
         "days_since_signup": days_since_signup,
         "is_subscription_required": is_subscription_required,
         "is_pro": bool(user_data['is_pro'])
@@ -236,6 +235,41 @@ async def get_logs(email: Optional[str] = None):
     rows = cursor.fetchall()
     conn.close()
     return [dict(row) for row in rows]
+
+@app.post("/api/gumroad-webhook")
+async def gumroad_webhook(request: Request):
+    """
+    Handles Gumroad 'Ping' requests.
+    Gumroad sends data formatted as application/x-www-form-urlencoded by default.
+    """
+    form_data = await request.form()
+    email = form_data.get("email")
+    sale_id = form_data.get("sale_id")
+    
+    if not email or not sale_id:
+        return JSONResponse(status_code=400, content={"error": "Missing email or sale_id"})
+    
+    logging.info(f"Gumroad purchase detected: {email} (Sale ID: {sale_id})")
+    
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    
+    try:
+        # Update or Create User
+        cursor.execute("SELECT id FROM user_account WHERE email = ?", (email,))
+        if not cursor.fetchone():
+            cursor.execute("INSERT INTO user_account (email, signup_date, is_pro) VALUES (?, ?, ?)", 
+                           (email, datetime.now().isoformat(), 1))
+        else:
+            cursor.execute("UPDATE user_account SET is_pro = 1 WHERE email = ?", (email,))
+            
+        conn.commit()
+        return {"success": True, "message": "User upgraded to PRO"}
+    except Exception as e:
+        logging.error(f"Webhook error: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
+    finally:
+        conn.close()
 
 # Mount MCP
 mcp.mount(app)

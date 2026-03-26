@@ -431,7 +431,14 @@ export default function App() {
                         <motion.div initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="industrial-card max-w-md w-full p-10 rounded-[32px] text-center" onClick={e => e.stopPropagation()}>
                             <h2 className="text-3xl font-black text-white mb-4 uppercase italic">Upgrade to PRO</h2>
                             <p className="text-slate-400 mb-8 text-sm leading-relaxed">Unlimited audits and PDF certificates for <span className="text-cyan-400 font-bold">$99/mo</span>.</p>
-                            <button onClick={() => window.open(`https://buy.paddle.com/99-pro?email=${user.email}`, '_blank')} className="w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg">Subscribe via Paddle</button>
+                            <a 
+                                href={`https://gumroad.com/l/pro-compliance?email=${user.email}`} 
+                                className="gumroad-button w-full py-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-widest rounded-2xl hover:bg-cyan-400 transition-all shadow-lg block"
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                            >
+                                Subscribe via Gumroad
+                            </a>
                             <button onClick={() => setShowPaywall(false)} className="mt-4 text-[10px] text-slate-500 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
                         </motion.div>
                     </motion.div>
