@@ -246,10 +246,22 @@ async def gumroad_webhook(request: Request):
     email = form_data.get("email")
     sale_id = form_data.get("sale_id")
     
+    product_id = form_data.get("product_id", "")
+    permalink = form_data.get("permalink", "")
+    product_name = form_data.get("product_name", "Unknown Product")
+    
+    # Requirement 3: Log the product_name for every ping
+    logging.info(f"Gumroad webhook ping: product_name='{product_name}', product_id='{product_id}', permalink='{permalink}'")
+    
+    # Requirement 1 & 2: Filter by Product ID / Permalink, ignore others
+    target = "b4m.gumroad.com/l/rvhda"
+    if target not in product_id and target not in permalink and "rvhda" not in product_id and "rvhda" not in permalink:
+        return JSONResponse(status_code=200, content={"success": True, "message": "Ignored unrelated product"})
+
     if not email or not sale_id:
         return JSONResponse(status_code=400, content={"error": "Missing email or sale_id"})
     
-    logging.info(f"Gumroad purchase detected: {email} (Sale ID: {sale_id})")
+    logging.info(f"PermitFlow Pro purchase approved for processing: {email} (Sale ID: {sale_id})")
     
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
