@@ -2,7 +2,7 @@
   "version": 2,
   "functions": {
     "api/**/*.py": {
-      "excludeFiles": "{node_modules/**,tests/**,static/**,assets/**,*.md}"
+      "excludeFiles": "{node_modules/**,venv/**,public/**,src/**,build/**,dist/**,tests/**,*.md}"
     }
   },
   "rewrites": [

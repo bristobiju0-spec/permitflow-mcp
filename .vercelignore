@@ -1,6 +1,11 @@
-node_modules/
 venv/
-.env
+.venv/
+node_modules/
+.next/
+out/
+build/
+dist/
 .git/
+README.md
 *.pyc
 __pycache__/
