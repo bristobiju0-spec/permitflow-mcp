@@ -577,8 +577,32 @@
                             </motion.div>
                         </section>
 
+                        {/* FAQ Section */}
+                        <section className="w-full max-w-3xl mx-auto px-6 py-20 z-10 border-t border-white/5">
+                            <div className="flex flex-col sm:flex-row items-center justify-between mb-12 gap-6">
+                                <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic text-center sm:text-left">Frequent Questions</h3>
+                                <span className="text-[9px] px-3 py-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full font-bold uppercase tracking-widest whitespace-nowrap">Last Updated: March 2026</span>
+                            </div>
+                            <div className="space-y-4">
+                                <FaqItem q="Does my 5-ton rooftop unit need a refrigerant log?" a="Yes. Under the 2026 AIM Act update, the threshold dropped to 15lbs. PermitFlow Pro automates these logs so you're audit-ready in seconds." />
+                                <FaqItem q="Is the app compliant with Oman’s 2026 Labor Laws?" a="Absolutely. We include fields for the mandatory Professional Practice License (required by June 1, 2026) for all technicians." />
+                                <FaqItem q="How do I handle the new A2L refrigerants?" a="Our engine identifies R-32 and R-454B and automatically applies the correct safety and leak-rate calculation protocols." />
+                            </div>
+                        </section>
+
+                        {/* Bottom Hook */}
+                        <section className="w-full border-t border-b border-white/5 bg-cyan-950/20 py-24 z-10">
+                            <div className="max-w-4xl mx-auto px-6 text-center">
+                                <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter italic mb-6">Don't risk a $50k EPA fine.</h3>
+                                <p className="text-sm md:text-base font-bold text-cyan-400 uppercase tracking-widest mb-12">Start tracking for $49/mo.</p>
+                                <a href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_40px_-10px_rgba(6,182,212,0.4)]">
+                                    Start Tracking
+                                </a>
+                            </div>
+                        </section>
+
                         {/* Login Section */}
-                        <section className="w-full max-w-md mx-auto px-6 py-12 z-10 flex flex-col items-center">
+                        <section className="w-full max-w-md mx-auto px-6 py-24 z-10 flex flex-col items-center">
                             <motion.div 
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -1384,6 +1408,28 @@
                                         </button>
                                     )}
                                 </motion.div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+            );
+        }
+
+        function FaqItem({ q, a }) {
+            const { useState } = React;
+            const motion = window.FramerMotion ? window.FramerMotion.motion : ({div: 'div'});
+            const AnimatePresence = window.FramerMotion ? window.FramerMotion.AnimatePresence : ({children}) => children;
+            const [open, setOpen] = useState(false);
+            return (
+                <div className="border border-white/5 rounded-2xl bg-white/5 overflow-hidden transition-all duration-200">
+                    <button onClick={() => setOpen(!open)} className="w-full text-left p-6 flex justify-between items-center hover:bg-white/10 transition-colors">
+                        <span className="text-[11px] md:text-sm font-black text-white tracking-widest uppercase leading-snug pr-4">{q}</span>
+                        <span className="text-cyan-500 font-black text-xl">{open ? '−' : '+'}</span>
+                    </button>
+                    <AnimatePresence>
+                        {open && (
+                            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-6 pb-6 mt-[-8px]">
+                                <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">{a}</p>
                             </motion.div>
                         )}
                     </AnimatePresence>
