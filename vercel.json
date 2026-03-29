@@ -1,5 +1,10 @@
 {
   "version": 2,
+  "functions": {
+    "api/**/*.py": {
+      "excludeFiles": "{node_modules/**,tests/**,static/**,assets/**,*.md}"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
