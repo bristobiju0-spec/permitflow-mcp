@@ -398,43 +398,42 @@
                 }
 
                 // Simulated Gemini 3.1 Pro Extraction
+                const refrigerants = {
+                    "R-410A": 2088,
+                    "R-134a": 1430,
+                    "R-404A": 3922,
+                    "R-32": 675
+                };
+                
                 const extracted = {
                     id: Date.now(),
                     timestamp: new Date().toLocaleTimeString(),
                     model: manualSeer ? "MANUAL-OVERRIDE-TEMP" : "58SB0A070E17--12",
                     seer2: manualSeer !== null ? parseFloat(manualSeer) : (Math.random() > 0.5 ? 16.2 : 13.5),
-                    type: manualSeer ? "Manual Test Input" : "Air Conditioner (Split)"
+                    type: manualSeer ? "Manual Test Input" : "Air Conditioner (Split)",
+                    refrigerant: "R-410A",
+                    charge_weight_lbs: 16
                 };
 
                 // Integration with @permitflow-engine logic
-                const weight_lbs = 16;
-                const gwp = 2088; // R-410A Default
-                
+                const gwp = refrigerants[extracted.refrigerant] || 2088;
                 let compliance = true;
                 let violationMsg = null;
                 let codeSection = "Global Standard";
 
                 if (region === 'USA (EPA)') {
-                    if (weight_lbs >= 15) {
+                    if (extracted.charge_weight_lbs >= 15) {
                         compliance = false;
-                        violationMsg = "Unit ≥ 15 lbs flagged for mandatory EPA leak-rate tracking.";
+                        violationMsg = "⚠️ EPA MANDATE: Annual leak inspection and mandatory 30-day repair required.";
                         codeSection = "EPA 608 (15lb Rule)";
                     }
-                } else if (region === 'Europe (EU F-Gas)') {
-                    const kg = weight_lbs * 0.453592;
+                } else if (region === 'Europe (EU F-Gas)' || region === 'UK') {
+                    const kg = extracted.charge_weight_lbs * 0.453592;
                     const tonnesCo2e = (kg * gwp) / 1000;
-                    if (tonnesCo2e > 5) {
+                    if (tonnesCo2e >= 5) {
                         compliance = false;
-                        violationMsg = `CO2 Equivalent (${tonnesCo2e.toFixed(2)} tonnes) > 5. Mandatory leak checks required.`;
-                        codeSection = "EU F-Gas Regulation";
-                    }
-                } else if (region === 'UK') {
-                    const kg = weight_lbs * 0.453592;
-                    const tonnesCo2e = (kg * gwp) / 1000;
-                    if (tonnesCo2e > 5) {
-                        compliance = false;
-                        violationMsg = `CO2 Equivalent (${tonnesCo2e.toFixed(2)} tonnes) > 5. Mandatory leak checks required.`;
-                        codeSection = "UK F-Gas";
+                        violationMsg = "⚠️ EU F-GAS MANDATE: Mandatory leak check every 12 months required.";
+                        codeSection = region === 'UK' ? "UK F-Gas" : "EU F-Gas Regulation";
                     }
                 }
                 
@@ -1024,13 +1023,21 @@
                                                                                     : currentResult.violation}
                                                                             </p>
                                                                             <div className="mt-4 flex flex-wrap gap-2">
-                                                                                {currentResult.is_compliant && (
+                                                                                {currentResult.is_compliant ? (
                                                                                     <button 
                                                                                         onClick={downloadCertificate}
                                                                                         className="px-4 py-2 bg-green-500/10 text-green-400 rounded-lg text-[9px] font-black uppercase tracking-widest border border-green-500/20"
                                                                                     >
                                                                                         Preview Certificate
                                                                                     </button>
+                                                                                ) : (
+                                                                                    <a 
+                                                                                        href="https://b4m.gumroad.com/l/rvhda" 
+                                                                                        target="_blank" rel="noopener noreferrer"
+                                                                                        className="px-4 py-3 bg-hazard-yellow text-black font-black text-[10px] uppercase tracking-widest rounded-lg transition-transform hover:scale-105 inline-block shadow-[0_0_20px_rgba(250,204,21,0.3)]"
+                                                                                    >
+                                                                                        Download Compliance-Ready Log ($5)
+                                                                                    </a>
                                                                                 )}
                                                                             </div>
                                                                         </div>
