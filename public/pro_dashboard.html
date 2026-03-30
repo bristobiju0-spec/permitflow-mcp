@@ -176,6 +176,7 @@
             const [showBlurredOverlay, setShowBlurredOverlay] = useState(false);
             const [isOffline, setIsOffline] = useState(!navigator.onLine);
             const [pendingSyncs, setPendingSyncs] = useState(0);
+            const [region, setRegion] = useState('USA (EPA)');
 
             // --- Hook logic moved inside App for scope safety ---
             const [isLocked, setIsLocked] = useState(false);
@@ -406,7 +407,36 @@
                 };
 
                 // Integration with @permitflow-engine logic
-                const compliance = extracted.seer2 >= 15.0;
+                const weight_lbs = 16;
+                const gwp = 2088; // R-410A Default
+                
+                let compliance = true;
+                let violationMsg = null;
+                let codeSection = "Global Standard";
+
+                if (region === 'USA (EPA)') {
+                    if (weight_lbs >= 15) {
+                        compliance = false;
+                        violationMsg = "Unit ≥ 15 lbs flagged for mandatory EPA leak-rate tracking.";
+                        codeSection = "EPA 608 (15lb Rule)";
+                    }
+                } else if (region === 'Europe (EU F-Gas)') {
+                    const kg = weight_lbs * 0.453592;
+                    const tonnesCo2e = (kg * gwp) / 1000;
+                    if (tonnesCo2e > 5) {
+                        compliance = false;
+                        violationMsg = `CO2 Equivalent (${tonnesCo2e.toFixed(2)} tonnes) > 5. Mandatory leak checks required.`;
+                        codeSection = "EU F-Gas Regulation";
+                    }
+                } else if (region === 'UK') {
+                    const kg = weight_lbs * 0.453592;
+                    const tonnesCo2e = (kg * gwp) / 1000;
+                    if (tonnesCo2e > 5) {
+                        compliance = false;
+                        violationMsg = `CO2 Equivalent (${tonnesCo2e.toFixed(2)} tonnes) > 5. Mandatory leak checks required.`;
+                        codeSection = "UK F-Gas";
+                    }
+                }
                 
                 // Track usage & Save to DB
                 let verification_id = `PF-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -436,8 +466,8 @@
                     verification_id: verification_id,
                     is_compliant: compliance,
                     status: compliance ? 'APPROVED' : 'REJECTED',
-                    violation: compliance ? null : `SEER2 ${extracted.seer2} fails 2026 CEC baseline (min 15.0)`,
-                    code_section: "Title 24, Part 6, Section 150.1(c)",
+                    violation: compliance ? null : violationMsg,
+                    code_section: codeSection,
                     gps: "34.0522° N, 118.2437° W" // Los Angeles
                 };
 
@@ -535,16 +565,16 @@
                                 animate={{ y: 0, opacity: 1 }} 
                                 className="text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter mb-6 leading-tight max-w-4xl"
                             >
-                                The Compliance Engine <br className="hidden md:block"/> for Modern <span className="text-cyan-400">HVAC Teams.</span>
+                                The Global Standard <br className="hidden md:block"/> for 2026 HVAC <span className="text-cyan-400">Compliance.</span>
                             </motion.h2>
                             
                             <motion.p 
                                 initial={{ y: 20, opacity: 0 }} 
                                 animate={{ y: 0, opacity: 1 }} 
                                 transition={{ delay: 0.1 }} 
-                                className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-widest max-w-2xl mb-10 leading-relaxed"
+                                className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-widest max-w-3xl mb-10 leading-relaxed"
                             >
-                                Automate your permits, track your logs, and stop wasting 10+ hours a week on paperwork.
+                                Automate EPA 15lb rules, EU F-Gas logs, and local permits in one dashboard. Built for contractors, priced for growth.
                             </motion.p>
                             
                             <motion.a 
@@ -554,14 +584,29 @@
                                 href="https://b4m.gumroad.com/l/rvhda" 
                                 className="inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_40px_-10px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_-10px_rgba(6,182,212,0.6)]"
                             >
-                                Get Started for $49/mo
+                                Get Started for $9.99/mo or $99/year
                             </motion.a>
+
+                            {/* Trust Signals: Supported Standards */}
+                            <motion.div 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                transition={{ delay: 0.3 }} 
+                                className="mt-12 w-full max-w-3xl flex flex-col items-center"
+                            >
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6">Supported Standards</p>
+                                <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale">
+                                    <div className="text-xl font-black italic tracking-tighter">EPA</div>
+                                    <div className="text-xl font-black tracking-widest">ASHRAE</div>
+                                    <div className="text-xl font-black border-2 border-white px-2 py-0.5 rounded">ISO 16890</div>
+                                </div>
+                            </motion.div>
                             
                             {/* Trust Bar */}
                             <motion.div 
                                 initial={{ y: 20, opacity: 0 }} 
                                 animate={{ y: 0, opacity: 1 }} 
-                                transition={{ delay: 0.3 }} 
+                                transition={{ delay: 0.4 }} 
                                 className="mt-16 w-full grid grid-cols-1 md:grid-cols-3 gap-6"
                             >
                                 {[
@@ -594,7 +639,7 @@
                         <section className="w-full border-t border-b border-white/5 bg-cyan-950/20 py-24 z-10">
                             <div className="max-w-4xl mx-auto px-6 text-center">
                                 <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter italic mb-6">Don't risk a $50k EPA fine.</h3>
-                                <p className="text-sm md:text-base font-bold text-cyan-400 uppercase tracking-widest mb-12">Start tracking for $49/mo.</p>
+                                <p className="text-sm md:text-base font-bold text-cyan-400 uppercase tracking-widest mb-12">Start tracking for $9.99/mo or $99/year.</p>
                                 <a href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_40px_-10px_rgba(6,182,212,0.4)]">
                                     Start Tracking
                                 </a>
@@ -882,13 +927,27 @@
                                                         <div className="mt-8 flex flex-col items-center gap-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                                                             <div className="h-px w-32 bg-white/10"></div>
                                                             
+                                                            <div className="w-full max-w-xs mb-2">
+                                                                <label className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-2 block">Region / Standard</label>
+                                                                <select 
+                                                                    value={region}
+                                                                    onChange={(e) => setRegion(e.target.value)}
+                                                                    className="w-full bg-black/40 border border-white/10 rounded-xl px-4 py-3 text-cyan-400 font-bold text-xs uppercase tracking-widest focus:border-cyan-500 outline-none transition-colors"
+                                                                >
+                                                                    <option value="USA (EPA)">USA (EPA)</option>
+                                                                    <option value="Europe (EU F-Gas)">Europe (EU F-Gas)</option>
+                                                                    <option value="UK">UK (F-Gas)</option>
+                                                                    <option value="International">International Standard</option>
+                                                                </select>
+                                                            </div>
+
                                                             <div className="flex flex-col items-center gap-2">
                                                                 <p className="text-[10px] text-slate-500 uppercase font-bold tracking-[0.2em] mb-2">Mock Mode: Manual Audit</p>
                                                                 <button 
                                                                     onClick={() => handleManualTrigger(16.0)}
                                                                     className="group relative px-10 py-4 bg-hazard-yellow text-black font-black text-[11px] uppercase tracking-[0.2em] rounded-full hover:scale-105 active:scale-95 transition-all shadow-[0_0_30px_rgba(250,204,21,0.2)] hover:shadow-[0_0_50px_rgba(250,204,21,0.4)]"
                                                                 >
-                                                                    Test Scan (16.0 SEER2)
+                                                                    Test Region Validation
                                                                     <div className="absolute inset-0 rounded-full border-2 border-black/10 scale-105 opacity-0 group-hover:opacity-100 transition-opacity"></div>
                                                                 </button>
                                                                 <p className="text-[9px] text-slate-600 italic mt-2">Verified bypassing Vision OCR for UI testing</p>
@@ -1372,7 +1431,7 @@
 
                                     <h2 className="text-3xl font-black text-white mb-4 tracking-tighter uppercase">Upgrade to PRO</h2>
                                     <p className="text-slate-400 mb-8 text-sm leading-relaxed">
-                                        Don't risk a Title 24 violation. Get <span className="text-white font-bold">unlimited audits</span> and <span className="text-white font-bold">PDF certificates</span> for <span className="text-cyan-400 font-bold">$99/mo</span>.
+                                        Don't risk a Title 24 violation. Get <span className="text-white font-bold">unlimited audits</span> and <span className="text-white font-bold">PDF certificates</span> for <span className="text-cyan-400 font-bold">$99/year</span>.
                                     </p>
 
                                     <div className="space-y-4 mb-8">
