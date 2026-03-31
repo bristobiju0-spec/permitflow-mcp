@@ -720,7 +720,7 @@ function GlobalCalculator() {
                             <h4 className="text-xl font-black text-white mb-4 uppercase italic">Usage Limit Reached</h4>
                             <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mb-8">You've reached your free limit. To unlock unlimited global calculations and audit-ready PDF exports, upgrade to pro ($49) or buy a Single Report ($5 USD).</p>
                             <div className="flex flex-col gap-3">
-                                <a href="https://b4m.gumroad.com/l/single-report" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all">Buy Single Report ($5)</a>
+                                <a href="https://b4m.gumroad.com/l/rulubr" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all">Buy Single Report ($5)</a>
                                 <a href="https://b4m.gumroad.com/l/pro-subscription" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-white/20 transition-all border border-white/10">Upgrade to Pro ($49)</a>
                                 <button onClick={() => setShowPaywall(false)} className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-4">Close</button>
                             </div>
