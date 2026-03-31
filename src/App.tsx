@@ -641,15 +641,7 @@ function GlobalCalculator() {
     };
 
     const handleCalculate = () => {
-<<<<<<< HEAD
         const usage = parseInt(localStorage.getItem('pf_calc_usage_v3') || '0');
-=======
-<<<<<<< HEAD
-        const usage = parseInt(localStorage.getItem('pf_calc_usage_v2') || '0');
-=======
-        const usage = parseInt(localStorage.getItem('pf_calc_usage_v3') || '0');
->>>>>>> 415f5075 (Final fix: Sync App.tsx, version usage to v3, and fix PDF namespacing)
->>>>>>> fab286c0 (Final fix: Sync App.tsx, version usage to v3, and fix PDF namespacing)
         if (usage >= 1) {
             setShowPaywall(true);
             return;
@@ -675,15 +667,7 @@ function GlobalCalculator() {
 
         setResult(message);
         setIsFreeUse(true);
-<<<<<<< HEAD
         localStorage.setItem('pf_calc_usage_v3', (usage + 1).toString());
-=======
-<<<<<<< HEAD
-        localStorage.setItem('pf_calc_usage_v2', (usage + 1).toString());
-=======
-        localStorage.setItem('pf_calc_usage_v3', (usage + 1).toString());
->>>>>>> 415f5075 (Final fix: Sync App.tsx, version usage to v3, and fix PDF namespacing)
->>>>>>> fab286c0 (Final fix: Sync App.tsx, version usage to v3, and fix PDF namespacing)
     };
 
     const downloadFreeReport = async () => {
