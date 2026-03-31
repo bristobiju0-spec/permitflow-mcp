@@ -684,9 +684,9 @@ function GlobalCalculator() {
             
             pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
             pdf.save(`PermitFlow_Compliance_Report_2026.pdf`);
-        } catch (error) {
+        } catch (error: any) {
             console.error("PDF generation failed", error);
-            alert("Error generating PDF. Please try again.");
+            alert(`Error generating PDF: ${error.message || 'Unknown error'}. Please try again.`);
         }
     };
 
