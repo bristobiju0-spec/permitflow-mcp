@@ -317,7 +317,7 @@ export default function App() {
                         Automate EPA 15lb rules, EU F-Gas logs, and local permits in one dashboard. Built for contractors, priced for growth.
                     </motion.p>
                     <motion.a initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_40px_-10px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_-10px_rgba(6,182,212,0.6)]">
-                        Get Started for $9.99/mo
+                        Get Started for $49/mo on Gumroad
                     </motion.a>
 
                     {/* Trust Signals: Supported Standards */}
@@ -364,7 +364,7 @@ export default function App() {
                         <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter italic mb-6">Don't risk a $50k EPA fine.</h3>
                         <p className="text-sm md:text-base font-bold text-cyan-400 uppercase tracking-widest mb-12">Start tracking today and bulletproof your compliance.</p>
                         <a href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all">
-                            Start for $49/mo
+                            Get Started for $49/mo on Gumroad
                         </a>
                     </div>
                 </section>
@@ -404,7 +404,6 @@ export default function App() {
                     <Footer />
                 </div>
                 
-                <LeadMagnetPopup />
                 <LegalModal modal={legalModal} setLegalModal={setLegalModal} />
             </div>
         );
@@ -622,38 +621,6 @@ export default function App() {
     );
 }
 
-function LeadMagnetPopup() {
-    const [show, setShow] = useState(false);
-
-    useEffect(() => {
-        const hasSeen = sessionStorage.getItem('pf_lead_magnet');
-        if (!hasSeen) {
-            const timer = setTimeout(() => setShow(true), 3000); // Wait 3s before showing
-            return () => clearTimeout(timer);
-        }
-    }, []);
-
-    const close = () => {
-        setShow(false);
-        sessionStorage.setItem('pf_lead_magnet', 'true');
-    };
-
-    if (!show) return null;
-
-    return (
-        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-6 right-6 z-[1000] w-[calc(100%-3rem)] md:w-96 industrial-card p-8 rounded-3xl border-cyan-500/30 overflow-hidden shadow-2xl">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
-            <button onClick={close} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-            <h4 className="text-[14px] md:text-base font-black text-white uppercase tracking-tighter italic pr-6 mb-3 leading-tight">Free Download: The 2026 HVAC Compliance Shield (PDF)</h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mb-6">Don't get hit with a $50,000 EPA fine. Stay ahead of the 15lb rule and the A2L transition.</p>
-            <a href="https://b4m.gumroad.com/l/free-checklist" target="_blank" rel="noopener noreferrer" onClick={close} className="block w-full text-center py-4 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-cyan-500 hover:text-black transition-all">
-                Download Now
-            </a>
-        </motion.div>
-    );
-}
 
 function FaqItem({ q, a }: { q: string, a: string }) {
     const [open, setOpen] = useState(false);
