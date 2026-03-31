@@ -629,6 +629,7 @@ function GlobalCalculator() {
     const [refrigerant, setRefrigerant] = useState('R-410A');
     const [weight, setWeight] = useState<number>(0);
     const [result, setResult] = useState<string | null>(null);
+    const [isFreeUse, setIsFreeUse] = useState(false);
     const [showPaywall, setShowPaywall] = useState(false);
 
     const refrigerants_gwp: Record<string, number> = {
@@ -665,7 +666,13 @@ function GlobalCalculator() {
         }
 
         setResult(message);
+        setIsFreeUse(true);
         localStorage.setItem('pf_calc_usage', (usage + 1).toString());
+    };
+
+    const downloadFreeReport = () => {
+        alert("Downloading Free 2026 Compliance Report...");
+        // In a real app, this would trigger the PDF generation logic
     };
 
     return (
@@ -700,7 +707,12 @@ function GlobalCalculator() {
             <div className="flex flex-col items-center">
                 {result && (
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`w-full p-6 rounded-2xl border mb-6 text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
-                        <span className="font-black uppercase tracking-widest text-xs italic">{result}</span>
+                        <span className="font-black uppercase tracking-widest text-xs italic mb-4 block">{result}</span>
+                        {isFreeUse && (
+                            <button onClick={downloadFreeReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
+                                📥 Download Free Report (First One Free)
+                            </button>
+                        )}
                     </motion.div>
                 )}
 
