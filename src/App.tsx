@@ -345,6 +345,8 @@ export default function App() {
                     </motion.div>
                 </section>
 
+                <GlobalCalculatorIntegration />
+
                 {/* FAQ Section */}
                 <section className="w-full max-w-3xl mx-auto px-6 py-20 z-10">
                     <div className="flex flex-col sm:flex-row items-center justify-between mb-12 gap-6">
@@ -621,6 +623,122 @@ export default function App() {
     );
 }
 
+
+function GlobalCalculator() {
+    const [region, setRegion] = useState('US');
+    const [refrigerant, setRefrigerant] = useState('R-410A');
+    const [weight, setWeight] = useState<number>(0);
+    const [result, setResult] = useState<string | null>(null);
+    const [showPaywall, setShowPaywall] = useState(false);
+
+    const refrigerants_gwp: Record<string, number> = {
+        "R-410A": 2088,
+        "R-134a": 1430,
+        "R-404A": 3922,
+        "R-32": 675,
+        "R-454B": 466
+    };
+
+    const handleCalculate = () => {
+        const usage = parseInt(localStorage.getItem('pf_calc_usage') || '0');
+        if (usage >= 1) {
+            setShowPaywall(true);
+            return;
+        }
+
+        const gwp = refrigerants_gwp[refrigerant];
+        let alert = false;
+        let message = "✅ SYSTEM COMPLIANT (2026 Ready)";
+
+        if (region === 'US') {
+            if (weight >= 15) {
+                alert = true;
+                message = "⚠️ EPA MANDATED TRACKING (15lb Rule)";
+            }
+        } else if (region === 'EU') {
+            const kg = weight * 0.453592;
+            const tonnesCo2e = (kg * gwp) / 1000;
+            if (tonnesCo2e >= 5) {
+                alert = true;
+                message = `⚠️ F-GAS MANDATED INSPECTION (${tonnesCo2e.toFixed(2)}t CO2e)`;
+            }
+        }
+
+        setResult(message);
+        localStorage.setItem('pf_calc_usage', (usage + 1).toString());
+    };
+
+    return (
+        <div className="w-full industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden mb-24">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/20 via-cyan-500/40 to-cyan-500/20"></div>
+            <div className="text-center mb-10">
+                <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-2">Global Compliance Calculator</h3>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">2026 HVAC Standard Engine</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
+                <div className="space-y-2">
+                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Region</label>
+                    <select value={region} onChange={e => setRegion(e.target.value)} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5">
+                        <option value="US">USA (EPA)</option>
+                        <option value="EU">Europe (EU F-GAS)</option>
+                        <option value="Global">International</option>
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Refrigerant</label>
+                    <select value={refrigerant} onChange={e => setRefrigerant(e.target.value)} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5">
+                        {Object.keys(refrigerants_gwp).map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                </div>
+                <div className="space-y-2">
+                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Charge Weight (Lbs)</label>
+                    <input type="number" value={weight || ''} onChange={e => setWeight(parseFloat(e.target.value))} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5" placeholder="e.g. 15" />
+                </div>
+            </div>
+
+            <div className="flex flex-col items-center">
+                {result && (
+                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`w-full p-6 rounded-2xl border mb-6 text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
+                        <span className="font-black uppercase tracking-widest text-xs italic">{result}</span>
+                    </motion.div>
+                )}
+
+                <button onClick={handleCalculate} className="px-12 py-5 bg-white/10 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-white/20 transition-all border border-white/10 active:scale-95">
+                    Calculate Logic
+                </button>
+            </div>
+
+            <p className="mt-10 text-[9px] text-slate-600 font-bold uppercase tracking-[0.1em] text-center italic opacity-50">
+                Calculations based on 2026 EPA and EU F-Gas standards. Not legal advice.
+            </p>
+
+            <AnimatePresence>
+                {showPaywall && (
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/95 backdrop-blur-xl z-50 flex items-center justify-center p-8">
+                        <div className="max-w-sm text-center">
+                            <h4 className="text-xl font-black text-white mb-4 uppercase italic">Usage Limit Reached</h4>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mb-8">You've reached your free limit. To unlock unlimited global calculations and audit-ready PDF exports, upgrade to Pro ($9.99 USD) or buy a Single Report ($5 USD).</p>
+                            <div className="flex flex-col gap-3">
+                                <a href="https://b4m.gumroad.com/l/single-report" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all">Buy Single Report ($5)</a>
+                                <a href="https://b4m.gumroad.com/l/pro-subscription" target="_blank" rel="noopener noreferrer" className="w-full py-4 bg-white/10 text-white font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-white/20 transition-all border border-white/10">Upgrade to Pro ($9.99)</a>
+                                <button onClick={() => setShowPaywall(false)} className="text-[9px] text-slate-600 font-bold uppercase tracking-widest mt-4">Close</button>
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+}
+
+function GlobalCalculatorIntegration() {
+    return (
+        <section className="w-full max-w-4xl mx-auto px-6 py-10 z-10">
+            <GlobalCalculator />
+        </section>
+    );
+}
 
 function FaqItem({ q, a }: { q: string, a: string }) {
     const [open, setOpen] = useState(false);
