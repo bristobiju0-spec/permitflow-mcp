@@ -641,7 +641,7 @@ function GlobalCalculator() {
     };
 
     const handleCalculate = () => {
-        const usage = parseInt(localStorage.getItem('pf_calc_usage') || '0');
+        const usage = parseInt(localStorage.getItem('pf_calc_usage_v2') || '0');
         if (usage >= 1) {
             setShowPaywall(true);
             return;
@@ -667,16 +667,31 @@ function GlobalCalculator() {
 
         setResult(message);
         setIsFreeUse(true);
-        localStorage.setItem('pf_calc_usage', (usage + 1).toString());
+        localStorage.setItem('pf_calc_usage_v2', (usage + 1).toString());
     };
 
-    const downloadFreeReport = () => {
-        alert("Downloading Free 2026 Compliance Report...");
-        // In a real app, this would trigger the PDF generation logic
+    const downloadFreeReport = async () => {
+        const element = document.getElementById('calculator-content');
+        if (!element) return;
+        
+        try {
+            const canvas = await html2canvas(element, { backgroundColor: '#000000' });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgProps = pdf.getImageProperties(imgData);
+            const pdfWidth = pdf.internal.pageSize.getWidth();
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+            
+            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+            pdf.save(`PermitFlow_Compliance_Report_2026.pdf`);
+        } catch (error) {
+            console.error("PDF generation failed", error);
+            alert("Error generating PDF. Please try again.");
+        }
     };
 
     return (
-        <div className="w-full industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden mb-24">
+        <div id="calculator-content" className="w-full industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden mb-24">
             <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/20 via-cyan-500/40 to-cyan-500/20"></div>
             <div className="text-center mb-10">
                 <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-2">Global Compliance Calculator</h3>
