@@ -80,6 +80,54 @@ def sales_pro(company_name: str) -> str:
     return f"Researching {company_name}... Found: HQ in SF, 500 employees, recently focused on scaling AI infrastructure."
 
 @mcp.tool()
+def compliance_check(region: str, refrigerant: str, charge_weight_lbs: float) -> str:
+    """
+    Checks HVAC compliance based on region, refrigerant type, and charge weight.
+    Regions: USA (EPA), Europe (EU F-Gas), UK, International.
+    """
+    logger.info(f"Compliance check for {region} | {refrigerant} | {charge_weight_lbs} lbs")
+    
+    refrigerants_gwp = {
+        "R-410A": 2088,
+        "R-134a": 1430,
+        "R-404A": 3922,
+        "R-32": 675,
+        "R-454B": 466
+    }
+    
+    gwp = refrigerants_gwp.get(refrigerant, 2088)
+    is_compliant = True
+    note = "Unit meets standard compliance requirements."
+    code_section = "General Standard"
+    
+    if region == "USA (EPA)":
+        if charge_weight_lbs >= 15:
+            is_compliant = False
+            note = "⚠️ EPA MANDATE: Annual leak inspection and mandatory 30-day repair required."
+            code_section = "EPA 608 (15lb Rule)"
+    elif region in ["Europe (EU F-Gas)", "UK"]:
+        # Convert lbs to kg
+        kg = charge_weight_lbs * 0.453592
+        tonnes_co2e = (kg * gwp) / 1000
+        if tonnes_co2e >= 5:
+            is_compliant = False
+            note = "⚠️ EU F-GAS MANDATE: Mandatory leak check every 12 months required."
+            code_section = "F-Gas Regulation (EU 517/2014)" if region == "Europe (EU F-Gas)" else "UK F-Gas Regulation"
+            
+    return json.dumps({
+        "is_compliant": is_compliant,
+        "note": note,
+        "code_section": code_section,
+        "region": region,
+        "details": {
+            "gwp": gwp,
+            "charge_lbs": charge_weight_lbs,
+            "charge_kg": charge_weight_lbs * 0.453592 if "kg" not in note else None,
+            "co2e_tonnes": (charge_weight_lbs * 0.453592 * gwp / 1000) if region in ["Europe (EU F-Gas)", "UK"] else None
+        }
+    }, indent=2)
+
+@mcp.tool()
 async def process_hvac_compliance_pro(equipment_image_b64: str, roof_image_b64: Optional[str] = None) -> str:
     """
     Refined Agent Manager Workflow:
