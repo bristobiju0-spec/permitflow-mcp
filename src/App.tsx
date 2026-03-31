@@ -55,6 +55,7 @@ export default function App() {
     const [legalModal, setLegalModal] = useState<{ show: boolean, content: string | null }>({ show: false, content: '' });
     const [isLocked, setIsLocked] = useState(false);
     const [cooldownRemaining, setCooldownRemaining] = useState(0);
+    const [region, setRegion] = useState('USA (EPA)');
 
     useEffect(() => {
         let timer: any;
@@ -191,10 +192,38 @@ export default function App() {
             timestamp: new Date().toLocaleString(),
             model: manualSeer ? "MANUAL-TEST" : "58SB0A070E17--12",
             seer2: manualSeer !== null ? manualSeer : (Math.random() > 0.5 ? 16.2 : 13.5),
+            refrigerant: "R-410A",
+            charge_weight_lbs: 16,
             type: "HVAC Unit"
         };
 
-        const compliance = extracted.seer2 >= 15.0;
+        // Integration with Global Compliance logic
+        const refrigerants_gwp: Record<string, number> = {
+            "R-410A": 2088,
+            "R-134a": 1430,
+            "R-404A": 3922,
+            "R-32": 675,
+            "R-454B": 466
+        };
+
+        const gwp = refrigerants_gwp[extracted.refrigerant] || 2088;
+        let compliance = true;
+        let violationMsg = null;
+
+        if (region === 'USA (EPA)') {
+            if (extracted.charge_weight_lbs >= 15) {
+                compliance = false;
+                violationMsg = "⚠️ EPA MANDATE: Annual leak inspection and mandatory 30-day repair required.";
+            }
+        } else if (region === 'Europe (EU F-Gas)' || region === 'UK') {
+            const kg = extracted.charge_weight_lbs * 0.453592;
+            const tonnesCo2e = (kg * gwp) / 1000;
+            if (tonnesCo2e >= 5) {
+                compliance = false;
+                violationMsg = "⚠️ EU F-GAS MANDATE: Mandatory leak check every 12 months required.";
+            }
+        }
+
         let verification_id = `PF-${Math.floor(1000 + Math.random() * 9000)}`;
         
         try {
@@ -269,15 +298,83 @@ export default function App() {
 
     if (!user) {
         return (
-            <div className="min-h-screen bg-[#0a0a0b] flex flex-col items-center justify-center p-6 bg-industrial-grid">
-                <div className="w-full max-w-md">
-                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="industrial-card p-10 rounded-[40px] border-cyan-500/20 text-center relative overflow-hidden mb-12">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/50 to-transparent"></div>
-                        <div className="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-8 border border-cyan-500/20 rotate-3">
-                            <div className="text-2xl font-black text-cyan-400 -rotate-3 italic">PF</div>
+            <div className="min-h-screen bg-[#0a0a0b] flex flex-col items-center bg-industrial-grid relative text-slate-200 overflow-x-hidden">
+                {/* Navbar */}
+                <header className="w-full max-w-6xl mx-auto px-6 py-8 flex justify-between items-center z-10">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex flex-col items-center justify-center font-black text-cyan-400 italic">PF</div>
+                        <h1 className="text-xl font-black text-white uppercase italic tracking-tighter">PermitFlow <span className="text-cyan-400">PRO</span></h1>
+                    </div>
+                    <button onClick={() => document.getElementById('auth-section')?.scrollIntoView({ behavior: 'smooth' })} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-white transition-colors">Client Login</button>
+                </header>
+
+                {/* Hero Section */}
+                <section className="w-full max-w-5xl mx-auto px-6 py-20 md:py-32 flex flex-col items-center text-center z-10">
+                    <motion.h2 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="text-4xl md:text-6xl lg:text-7xl font-black text-white uppercase tracking-tighter italic mb-8 leading-tight max-w-4xl">
+                        The Global Standard <br className="hidden md:block"/> for 2026 HVAC <span className="text-cyan-400">Compliance.</span>
+                    </motion.h2>
+                    <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="text-sm md:text-base font-bold text-slate-400 uppercase tracking-widest max-w-2xl mb-12 leading-relaxed">
+                        Automate EPA 15lb rules, EU F-Gas logs, and local permits in one dashboard. Built for contractors, priced for growth.
+                    </motion.p>
+                    <motion.a initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.2 }} href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_40px_-10px_rgba(6,182,212,0.4)] hover:shadow-[0_0_60px_-10px_rgba(6,182,212,0.6)]">
+                        Get Started for $9.99/mo
+                    </motion.a>
+
+                    {/* Trust Signals: Supported Standards */}
+                    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} className="mt-12 w-full max-w-3xl flex flex-col items-center">
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-6 border-b border-white/5 pb-2">Supported Standards</p>
+                        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+                            <div className="text-xl font-black italic tracking-tighter text-white">EPA</div>
+                            <div className="text-xl font-black tracking-widest text-white">ASHRAE</div>
+                            <div className="text-xl font-black border-2 border-white px-2 py-0.5 rounded text-white">ISO 16890</div>
                         </div>
-                        <h1 className="text-3xl font-black text-white mb-2 uppercase tracking-tighter italic">PermitFlow <span className="text-cyan-400">PRO</span></h1>
-                        <p className="text-slate-500 font-bold uppercase tracking-widest text-[10px] mb-8">Industrial Compliance Gateway v3.1</p>
+                    </motion.div>
+                    
+                    {/* Trust Bar */}
+                    <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3 }} className="mt-24 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {[
+                            { icon: "🛡️", text: "EPA 608 Ready" },
+                            { icon: "⚡", text: "Instant Permit Generation" },
+                            { icon: "📱", text: "Mobile-First Design" }
+                        ].map((t, i) => (
+                            <div key={i} className="flex items-center justify-center gap-4 p-5 bg-white/5 border border-white/5 rounded-2xl transition-all hover:bg-white/10 hover:border-white/10">
+                                <span className="text-2xl">{t.icon}</span>
+                                <span className="text-[11px] font-black uppercase tracking-widest text-slate-300">{t.text}</span>
+                            </div>
+                        ))}
+                    </motion.div>
+                </section>
+
+                {/* FAQ Section */}
+                <section className="w-full max-w-3xl mx-auto px-6 py-20 z-10">
+                    <div className="flex flex-col sm:flex-row items-center justify-between mb-12 gap-6">
+                        <h3 className="text-2xl md:text-3xl font-black text-white uppercase tracking-tighter italic text-center sm:text-left">Frequent Questions</h3>
+                        <span className="text-[9px] px-3 py-1.5 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full font-bold uppercase tracking-widest whitespace-nowrap">Last Updated: March 2026</span>
+                    </div>
+                    <div className="space-y-4">
+                        <FaqItem q="Does my 5-ton rooftop unit need a refrigerant log?" a="Yes. Under the 2026 AIM Act update, the threshold dropped to 15lbs. PermitFlow Pro automates these logs so you're audit-ready in seconds." />
+                        <FaqItem q="Is the app compliant with Oman's 2026 Labor Laws?" a="Absolutely. We include fields for the mandatory Professional Practice License (required by June 1, 2026) for all technicians." />
+                        <FaqItem q="How do I handle the new A2L refrigerants?" a="Our engine identifies R-32 and R-454B and automatically applies the correct safety and leak-rate calculation protocols." />
+                    </div>
+                </section>
+
+                {/* Bottom Hook */}
+                <section className="w-full border-t border-white/5 bg-cyan-950/20 py-24 z-10 mt-10">
+                    <div className="max-w-4xl mx-auto px-6 text-center">
+                        <h3 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tighter italic mb-6">Don't risk a $50k EPA fine.</h3>
+                        <p className="text-sm md:text-base font-bold text-cyan-400 uppercase tracking-widest mb-12">Start tracking today and bulletproof your compliance.</p>
+                        <a href="https://b4m.gumroad.com/l/rvhda" className="gumroad-button inline-flex items-center justify-center px-12 py-5 sm:py-6 bg-cyan-500 text-black font-black text-xs md:text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all">
+                            Start for $49/mo
+                        </a>
+                    </div>
+                </section>
+
+                {/* Auth / Existing Users Section */}
+                <section id="auth-section" className="w-full max-w-md mx-auto px-6 py-24 z-10 border-t border-white/5">
+                    <motion.div initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} className="industrial-card p-10 rounded-[40px] border-white/5 text-center relative overflow-hidden mb-12">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-cyan-500/30 to-transparent"></div>
+                        <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tighter italic">Client Login</h3>
+                        <p className="text-slate-500 font-bold uppercase tracking-widest text-[9px] mb-8">Access the Verification Dashboard</p>
                         
                         <form onSubmit={handleLogin} className="space-y-4 text-left">
                             <div>
@@ -290,8 +387,8 @@ export default function App() {
                                     I agree to the <button type="button" onClick={() => openLegal('terms')} className="text-cyan-400 hover:underline">Terms</button> & <button type="button" onClick={() => openLegal('privacy')} className="text-cyan-400 hover:underline">Privacy Policy</button>, and understand data is stored in Oman-compliant regions.
                                 </label>
                             </div>
-                            <button type="submit" disabled={authLoading} className="w-full py-5 bg-cyan-500 text-black font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-3">
-                                {authLoading ? <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin"></div> : 'Access Dashboard'}
+                            <button type="submit" disabled={authLoading} className="w-full py-5 bg-white/10 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-white/20 transition-all flex items-center justify-center gap-3">
+                                {authLoading ? <div className="w-4 h-4 border-2 border-slate-400 border-t-white rounded-full animate-spin"></div> : 'Access Dashboard'}
                             </button>
                             <div className="relative py-4 flex items-center gap-4">
                                 <div className="flex-1 h-px bg-white/5"></div>
@@ -301,8 +398,13 @@ export default function App() {
                             <button type="button" onClick={handleGoogleLogin} className="w-full py-5 bg-white/5 text-white font-black text-[10px] uppercase tracking-widest rounded-2xl border border-white/10 hover:bg-white/10">Continue with Google</button>
                         </form>
                     </motion.div>
+                </section>
+
+                <div className="w-full z-10">
                     <Footer />
                 </div>
+                
+                <LeadMagnetPopup />
                 <LegalModal modal={legalModal} setLegalModal={setLegalModal} />
             </div>
         );
@@ -366,6 +468,22 @@ export default function App() {
                 <div className="p-10 max-w-5xl mx-auto w-full flex-1">
                     {activeView === 'dashboard' ? (
                         <div className="industrial-card p-12 rounded-[40px] border-white/5 text-center">
+                            {/* Region Selector */}
+                            <div className="mb-10 flex flex-col items-center">
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Select Compliance Region</p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                    {['USA (EPA)', 'Europe (EU F-Gas)', 'UK', 'International'].map(r => (
+                                        <button 
+                                            key={r}
+                                            onClick={() => setRegion(r)}
+                                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${region === r ? 'bg-cyan-500 text-black border-cyan-500' : 'bg-white/5 text-slate-400 border-white/5 hover:bg-white/10'}`}
+                                        >
+                                            {r}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
                             {!preview ? (
                                 <div className="py-20 border-2 border-dashed border-white/5 rounded-3xl relative group">
                                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileUpload} />
@@ -391,7 +509,11 @@ export default function App() {
                                                     <p className="text-[9px] mt-2 opacity-50 font-mono tracking-tighter">ID: {currentResult.verification_id}</p>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
-                                                    <button onClick={() => downloadCertificate()} className="py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-2">Export PDF</button>
+                                                    {currentResult.is_compliant ? (
+                                                        <button onClick={() => downloadCertificate()} className="py-4 bg-cyan-500 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-cyan-400 transition-all flex items-center justify-center gap-2">Export PDF</button>
+                                                    ) : (
+                                                        <a href="https://b4m.gumroad.com/l/rvhda" target="_blank" rel="noopener noreferrer" className="py-4 bg-yellow-400 text-black font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-yellow-300 transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(250,204,21,0.3)]">Download Compliance-Ready Log ($5)</a>
+                                                    )}
                                                     <button onClick={reset} className="py-4 bg-white/5 text-slate-400 font-black text-[10px] uppercase tracking-widest rounded-xl hover:text-white border border-white/5">Reset</button>
                                                 </div>
                                             </div>
@@ -496,6 +618,58 @@ export default function App() {
             </div>
 
             <LegalModal modal={legalModal} setLegalModal={setLegalModal} />
+        </div>
+    );
+}
+
+function LeadMagnetPopup() {
+    const [show, setShow] = useState(false);
+
+    useEffect(() => {
+        const hasSeen = sessionStorage.getItem('pf_lead_magnet');
+        if (!hasSeen) {
+            const timer = setTimeout(() => setShow(true), 3000); // Wait 3s before showing
+            return () => clearTimeout(timer);
+        }
+    }, []);
+
+    const close = () => {
+        setShow(false);
+        sessionStorage.setItem('pf_lead_magnet', 'true');
+    };
+
+    if (!show) return null;
+
+    return (
+        <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-6 right-6 z-[1000] w-[calc(100%-3rem)] md:w-96 industrial-card p-8 rounded-3xl border-cyan-500/30 overflow-hidden shadow-2xl">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500 to-blue-500"></div>
+            <button onClick={close} className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+            <h4 className="text-[14px] md:text-base font-black text-white uppercase tracking-tighter italic pr-6 mb-3 leading-tight">Free Download: The 2026 HVAC Compliance Shield (PDF)</h4>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed mb-6">Don't get hit with a $50,000 EPA fine. Stay ahead of the 15lb rule and the A2L transition.</p>
+            <a href="https://b4m.gumroad.com/l/free-checklist" target="_blank" rel="noopener noreferrer" onClick={close} className="block w-full text-center py-4 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-cyan-500 hover:text-black transition-all">
+                Download Now
+            </a>
+        </motion.div>
+    );
+}
+
+function FaqItem({ q, a }: { q: string, a: string }) {
+    const [open, setOpen] = useState(false);
+    return (
+        <div className="border border-white/5 rounded-2xl bg-white/5 overflow-hidden transition-all duration-200">
+            <button onClick={() => setOpen(!open)} className="w-full text-left p-6 flex justify-between items-center hover:bg-white/10 transition-colors">
+                <span className="text-[11px] md:text-sm font-black text-white tracking-widest uppercase leading-snug pr-4">{q}</span>
+                <span className="text-cyan-500 font-black text-xl">{open ? '−' : '+'}</span>
+            </button>
+            <AnimatePresence>
+                {open && (
+                    <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="px-6 pb-6 mt-[-8px]">
+                        <p className="text-[10px] md:text-xs font-bold text-slate-400 uppercase tracking-widest leading-relaxed">{a}</p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
