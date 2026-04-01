@@ -1522,7 +1522,7 @@
 
             const handleCalculate = () => {
                 const usage = parseInt(localStorage.getItem('pf_calc_usage_v3') || '0');
-                if (usage >= 1 && !pfPaid) {
+                if (usage >= 10 && !pfPaid) {
                     setShowPaywall(true);
                     return;
                 }
