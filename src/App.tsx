@@ -606,7 +606,13 @@ export default function App() {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                             >
-                                Secure Access via Gumroad
+                                <button 
+                                    id="download-report-btn"
+                                    onClick={downloadAuditReport}
+                                    className="bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-3 rounded-xl font-black uppercase tracking-tighter transition-all flex items-center gap-2 group"
+                                >
+                                    {pfPaid ? '📥 Download Paid Audit Report' : '📥 Download Free Audit Report'}
+                                </button>
                             </a>
                             <button onClick={() => setShowPaywall(false)} className="text-[10px] text-slate-600 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
                         </motion.div>
@@ -644,6 +650,21 @@ function GlobalCalculator() {
     const [result, setResult] = useState<string | null>(null);
     const [isFreeUse, setIsFreeUse] = useState(false);
     const [showPaywall, setShowPaywall] = useState(false);
+    const [pfPaid, setPfPaid] = useState(false);
+    const [reportId, setReportId] = useState('');
+
+    useEffect(() => {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('pf_paid') === 'true') {
+            setPfPaid(true);
+        }
+    }, []);
+
+    const generateReportId = () => {
+        const id = 'PF-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+        setReportId(id);
+        return id;
+    };
 
     const refrigerants_gwp: Record<string, number> = {
         "R-410A": 2088,
@@ -655,11 +676,13 @@ function GlobalCalculator() {
 
     const handleCalculate = () => {
         const usage = parseInt(localStorage.getItem('pf_calc_usage_v3') || '0');
-        if (usage >= 1) {
+        // Allow if free use OR if payment verified
+        if (usage >= 1 && !pfPaid) {
             setShowPaywall(true);
             return;
         }
 
+        generateReportId();
         const gwp = refrigerants_gwp[refrigerant];
         let alert = false;
         let message = "✅ SYSTEM COMPLIANT (2026 Ready)";
@@ -683,41 +706,38 @@ function GlobalCalculator() {
         localStorage.setItem('pf_calc_usage_v3', (usage + 1).toString());
     };
 
-    const downloadFreeReport = async () => {
-        const element = document.getElementById('calculator-content');
+    const downloadAuditReport = async () => {
+        const element = document.getElementById('audit-report-template');
         if (!element) return;
         
+        element.style.display = 'block';
         try {
             const canvas = await html2canvas(element, { 
-                backgroundColor: '#000000',
+                backgroundColor: '#ffffff',
                 scale: 2,
                 logging: false,
                 onclone: (clonedDoc) => {
-                    // Fix for oklab/oklch unsupported color error in html2canvas
-                    const elements = clonedDoc.getElementsByTagName('*');
-                    for (let i = 0; i < elements.length; i++) {
-                        const el = elements[i] as HTMLElement;
-                        el.style.color = '#ffffff';
-                        const style = window.getComputedStyle(el);
-                        if (style.backgroundImage.includes('gradient')) {
-                            el.style.backgroundImage = 'none';
-                        }
-                    }
-                    const gradient = clonedDoc.getElementById('calc-gradient');
-                    if (gradient) gradient.style.display = 'none';
+                    const el = clonedDoc.getElementById('audit-report-template');
+                    if (el) el.style.display = 'block';
                 }
             });
-            const imgData = canvas.toDataURL('image/png');
+            const imgData = canvas.toDataURL('image/png', 1.0);
             const pdf = new jsPDF('p', 'mm', 'a4');
-            const imgProps = pdf.getImageProperties(imgData);
-            const pdfWidth = pdf.internal.pageSize.getWidth();
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-            
-            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-            pdf.save(`PermitFlow_Compliance_Report_2026.pdf`);
+            pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+            // Non-editable "Locked" feel via metadata
+            pdf.setProperties({
+                title: 'Compliance Audit Report',
+                subject: '2026 HVAC Regulatory Compliance',
+                author: 'PermitFlow Pro',
+                keywords: 'compliance, hvac, audit, epa, f-gas',
+                creator: 'PermitFlow Pro Engine'
+            });
+            pdf.save(`Audit_Report_${reportId}.pdf`);
+            element.style.display = 'none';
         } catch (error: any) {
             console.error("PDF generation failed", error);
             alert(`Error generating PDF: ${error.message || 'Unknown error'}. Please try again.`);
+            element.style.display = 'none';
         }
     };
 
@@ -755,8 +775,8 @@ function GlobalCalculator() {
                     <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`w-full p-6 rounded-2xl border mb-6 text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
                         <span className="font-black uppercase tracking-widest text-xs italic mb-4 block">{result}</span>
                         {isFreeUse && (
-                            <button onClick={downloadFreeReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
-                                📥 Download Free Report (First One Free)
+                            <button onClick={downloadAuditReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
+                                {pfPaid ? '📥 Download Paid Audit Report' : '📥 Download Free Audit Report'}
                             </button>
                         )}
                     </motion.div>
