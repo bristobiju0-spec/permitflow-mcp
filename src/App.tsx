@@ -697,19 +697,14 @@ function GlobalCalculator() {
                     const elements = clonedDoc.getElementsByTagName('*');
                     for (let i = 0; i < elements.length; i++) {
                         const el = elements[i] as HTMLElement;
+                        el.style.color = '#ffffff';
                         const style = window.getComputedStyle(el);
-                        ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
-                            const val = style.getPropertyValue(prop);
-                            if (val && (val.includes('oklab') || val.includes('oklch'))) {
-                                // Default to a safe fallback (cyan for branding, slate for others)
-                                if (prop === 'color' || prop === 'borderColor') {
-                                    el.style.setProperty(prop, '#06b6d4', 'important');
-                                } else {
-                                    el.style.setProperty(prop, '#0f172a', 'important');
-                                }
-                            }
-                        });
+                        if (style.backgroundImage.includes('gradient')) {
+                            el.style.backgroundImage = 'none';
+                        }
                     }
+                    const gradient = clonedDoc.getElementById('calc-gradient');
+                    if (gradient) gradient.style.display = 'none';
                 }
             });
             const imgData = canvas.toDataURL('image/png');
@@ -727,8 +722,8 @@ function GlobalCalculator() {
     };
 
     return (
-        <div id="calculator-content" className="w-full industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden mb-24">
-            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/20 via-cyan-500/40 to-cyan-500/20"></div>
+        <div id="calculator-content" style={{ backgroundColor: '#0a0a0b', border: '1px solid #2d2d35', color: 'white' }} className="w-full industrial-card p-10 rounded-[40px] relative overflow-hidden mb-24">
+            <div id="calc-gradient" style={{ background: 'linear-gradient(to right, #06b6d4, #06b6d4)' }} className="absolute top-0 left-0 w-full h-1 opacity-20"></div>
             <div className="text-center mb-10">
                 <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-2">Global Compliance Calculator</h3>
                 <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">2026 HVAC Standard Engine</p>
