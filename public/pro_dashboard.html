@@ -1494,8 +1494,23 @@
             const [refrigerant, setRefrigerant] = useState('R-410A');
             const [weight, setWeight] = useState(0);
             const [result, setResult] = useState(null);
-            const [isFreeUse, setIsFreeUse] = useState(false);
-            const [showPaywall, setShowPaywall] = useState(false);
+            const [isFreeUse, setIsFreeUse] = React.useState(false);
+            const [showPaywall, setShowPaywall] = React.useState(false);
+            const [pfPaid, setPfPaid] = React.useState(false);
+            const [reportId, setReportId] = React.useState('');
+
+            React.useEffect(() => {
+                const params = new URLSearchParams(window.location.search);
+                if (params.get('pf_paid') === 'true') {
+                    setPfPaid(true);
+                }
+            }, []);
+
+            const generateReportId = () => {
+                const id = 'PF-' + Math.random().toString(36).substr(2, 4).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                setReportId(id);
+                return id;
+            };
 
             const refrigerants_gwp = {
                 "R-410A": 2088,
@@ -1507,10 +1522,12 @@
 
             const handleCalculate = () => {
                 const usage = parseInt(localStorage.getItem('pf_calc_usage_v3') || '0');
-                if (usage >= 1) {
+                if (usage >= 1 && !pfPaid) {
                     setShowPaywall(true);
                     return;
                 }
+
+                generateReportId();
 
                 const gwp = refrigerants_gwp[refrigerant];
                 let message = "✅ SYSTEM COMPLIANT (2026 Ready)";
@@ -1532,50 +1549,50 @@
                 localStorage.setItem('pf_calc_usage_v3', (usage + 1).toString());
             };
 
-            const downloadFreeReport = async () => {
-                const element = document.getElementById('calculator-content');
+            const downloadAuditReport = async () => {
+                const element = document.getElementById('audit-report-template');
                 if (!element) return;
                 
+                element.style.display = 'block';
+                // Small delay to ensure browser repaints
+                await new Promise(r => setTimeout(r, 100));
+
                 try {
                     const canvas = await html2canvas(element, { 
-                        backgroundColor: '#000000', 
+                        backgroundColor: '#ffffff', 
                         scale: 2,
+                        logging: false,
+                        useCORS: true,
                         onclone: (clonedDoc) => {
-                            const elements = clonedDoc.getElementsByTagName('*');
-                            for (let i = 0; i < elements.length; i++) {
-                                const el = elements[i];
-                                const style = window.getComputedStyle(el);
-                                ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
-                                    const val = style.getPropertyValue(prop);
-                                    if (val && (val.includes('oklab') || val.includes('oklch'))) {
-                                        if (prop === 'color' || prop === 'borderColor') {
-                                            el.style.setProperty(prop, '#06b6d4', 'important');
-                                        } else {
-                                            el.style.setProperty(prop, '#0f172a', 'important');
-                                        }
-                                    }
-                                });
-                            }
+                            const el = clonedDoc.getElementById('audit-report-template');
+                            if (el) el.style.display = 'block';
                         }
                     });
-                    const imgData = canvas.toDataURL('image/png');
+                    const imgData = canvas.toDataURL('image/png', 1.0);
                     const { jsPDF } = window.jspdf;
-                    const pdf = new jsPDF('p', 'mm', 'a4');
-                    const imgProps = pdf.getImageProperties(imgData);
-                    const pdfWidth = pdf.internal.pageSize.getWidth();
-                    const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+                    const pdf = new jsPDF('p', 'mm', 'a4', true);
+                    pdf.addImage(imgData, 'PNG', 0, 0, 210, 297, undefined, 'FAST');
                     
-                    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                    pdf.save(`PermitFlow_Compliance_Report_2026.pdf`);
+                    pdf.setProperties({
+                        title: 'Compliance Audit Report',
+                        subject: '2026 HVAC Regulatory Compliance',
+                        author: 'PermitFlow Pro',
+                        keywords: 'compliance, hvac, audit, epa, f-gas',
+                        creator: 'PermitFlow Pro Engine'
+                    });
+                    
+                    pdf.save(`Audit_Report_${reportId}.pdf`);
                 } catch (error) {
                     console.error("PDF generation failed", error);
                     alert(`Error generating PDF: ${error.message || 'Unknown error'}. Please try again.`);
+                } finally {
+                    element.style.display = 'none';
                 }
             };
 
             return (
-                <div id="calculator-content" className="w-full industrial-card p-10 rounded-[40px] border-white/5 bg-black/40 backdrop-blur-md relative overflow-hidden mb-24">
-                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-cyan-500/20 via-cyan-500/40 to-cyan-500/20"></div>
+                <div id="calculator-content" style={{ backgroundColor: '#0a0a0b', border: '1px solid #2d2d35', color: 'white' }} className="w-full industrial-card p-10 rounded-[40px] relative overflow-hidden mb-24">
+                    <div id="calc-gradient" style={{ background: 'linear-gradient(to right, #06b6d4, #06b6d4)' }} className="absolute top-0 left-0 w-full h-1 opacity-20"></div>
                     <div className="text-center mb-10">
                         <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-2">Global Compliance Calculator</h3>
                         <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">2026 HVAC Standard Engine</p>
@@ -1607,8 +1624,8 @@
                             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`w-full p-6 rounded-2xl border mb-6 text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
                                 <span className="font-black uppercase tracking-widest text-xs italic mb-4 block">{result}</span>
                                 {isFreeUse && (
-                                    <button onClick={downloadFreeReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
-                                        📥 Download Free Report (First One Free)
+                                    <button onClick={downloadAuditReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
+                                        {pfPaid ? '📥 Download Paid Audit Report' : '📥 Download Free Audit Report'}
                                     </button>
                                 )}
                             </motion.div>
@@ -1638,6 +1655,69 @@
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Hidden Audit Template (Monochrome) */}
+                    <div id="audit-report-template" style={{ display: 'none', width: '210mm', minHeight: '297mm', padding: '20mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Inter, sans-serif' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000', paddingBottom: '10mm', marginBottom: '10mm' }}>
+                            <div style={{ fontWeight: 900, fontSize: '24px', letterSpacing: '-1px' }}>[COMPANY LOGO]</div>
+                            <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontWeight: 900, fontSize: '18px', textTransform: 'uppercase' }}>Official Compliance Audit</div>
+                                <div style={{ fontSize: '12px', color: '#666' }}>Generated on {new Date().toLocaleDateString()}</div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '10mm' }}>
+                            <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>System Specifications</h4>
+                            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <tbody>
+                                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px', width: '40%' }}>Operating Region</td>
+                                        <td style={{ padding: '3mm 0', fontSize: '12px' }}>{region === 'US' ? 'United States (EPA)' : (region === 'EU' ? 'European Union (F-Gas)' : region)}</td>
+                                    </tr>
+                                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Refrigerant Type</td>
+                                        <td style={{ padding: '3mm 0', fontSize: '12px' }}>{refrigerant}</td>
+                                    </tr>
+                                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Charge Weight</td>
+                                        <td style={{ padding: '3mm 0', fontSize: '12px' }}>{weight} lbs</td>
+                                    </tr>
+                                    <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                        <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Global Warming Potential (GWP)</td>
+                                        <td style={{ padding: '3mm 0', fontSize: '12px' }}>{refrigerants_gwp[refrigerant] || 'N/A'}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div style={{ marginBottom: '10mm' }}>
+                            <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>Compliance Assessment</h4>
+                            <div style={{ backgroundColor: '#f9f9f9', padding: '5mm', borderRadius: '2mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#666' }}>Carbon Equivalent (CO2e)</div>
+                                    <div style={{ fontSize: '24px', fontWeight: 900 }}>{((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000).toFixed(2)} Tonnes</div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#666' }}>Status</div>
+                                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000' }}>{result}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style={{ marginBottom: '10mm' }}>
+                            <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>Regulatory Mandates</h4>
+                            <p style={{ fontSize: '11px', lineHeight: '1.6', color: '#333' }}>
+                                {region === 'US' && weight >= 15 && "Per EPA Section 608: This unit exceeds the 15lb threshold. Mandatory annual leak inspections and 30-day repair cycles apply. Failure to maintain logs may result in significant civil penalties."}
+                                {region === 'EU' && ((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000) >= 5 && "Per EU F-Gas Regulation 517/2014: This unit exceeds 5 tonnes CO2e. Mandatory leak checks every 12 months (or 24 months with leak detection system) are required."}
+                                {!( (region === 'US' && weight >= 15) || (region === 'EU' && ((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000) >= 5) ) && "This system currently operates below major mandatory inspection thresholds for 2026. However, standard preventative maintenance and record-keeping are recommended for ISO 14001 compliance."}
+                            </p>
+                        </div>
+
+                        <div style={{ marginTop: 'auto', paddingTop: '10mm', borderTop: '1px solid #000', display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#999', fontWeight: 700 }}>
+                            <div>REPORT ID: {reportId}</div>
+                            <div>PERMITFLOW PRO | OFFICIAL COMPLIANCE DOCUMENT</div>
+                        </div>
+                    </div>
                 </div>
             );
         }

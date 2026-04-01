@@ -800,6 +800,69 @@ function GlobalCalculator() {
                     </motion.div>
                 )}
             </AnimatePresence>
+
+            {/* Hidden Audit Template (Monochrome) */}
+            <div id="audit-report-template" style={{ display: 'none', width: '210mm', minHeight: '297mm', padding: '20mm', backgroundColor: '#ffffff', color: '#000000', fontFamily: 'Inter, sans-serif' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '2px solid #000', paddingBottom: '10mm', marginBottom: '10mm' }}>
+                    <div style={{ fontWeight: 900, fontSize: '24px', letterSpacing: '-1px' }}>[COMPANY LOGO]</div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontWeight: 900, fontSize: '18px', textTransform: 'uppercase' }}>Official Compliance Audit</div>
+                        <div style={{ fontSize: '12px', color: '#666' }}>Generated on {new Date().toLocaleDateString()}</div>
+                    </div>
+                </div>
+
+                <div style={{ marginBottom: '10mm' }}>
+                    <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>System Specifications</h4>
+                    <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                        <tbody>
+                            <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px', width: '40%' }}>Operating Region</td>
+                                <td style={{ padding: '3mm 0', fontSize: '12px' }}>{region === 'US' ? 'United States (EPA)' : (region === 'EU' ? 'European Union (F-Gas)' : region)}</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Refrigerant Type</td>
+                                <td style={{ padding: '3mm 0', fontSize: '12px' }}>{refrigerant}</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Charge Weight</td>
+                                <td style={{ padding: '3mm 0', fontSize: '12px' }}>{weight} lbs</td>
+                            </tr>
+                            <tr style={{ borderBottom: '1px solid #f0f0f0' }}>
+                                <td style={{ padding: '3mm 0', fontWeight: 700, fontSize: '12px' }}>Global Warming Potential (GWP)</td>
+                                <td style={{ padding: '3mm 0', fontSize: '12px' }}>{refrigerants_gwp[refrigerant] || 'N/A'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style={{ marginBottom: '10mm' }}>
+                    <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>Compliance Assessment</h4>
+                    <div style={{ backgroundColor: '#f9f9f9', padding: '5mm', borderRadius: '2mm', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div>
+                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#666' }}>Carbon Equivalent (CO2e)</div>
+                            <div style={{ fontSize: '24px', fontWeight: 900 }}>{((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000).toFixed(2)} Tonnes</div>
+                        </div>
+                        <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', color: '#666' }}>Status</div>
+                            <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000' }}>{result}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div style={{ marginBottom: '10mm' }}>
+                    <h4 style={{ textTransform: 'uppercase', fontSize: '14px', fontWeight: 900, borderBottom: '1px solid #eee', paddingBottom: '2mm', marginBottom: '4mm' }}>Regulatory Mandates</h4>
+                    <p style={{ fontSize: '11px', lineHeight: '1.6', color: '#333' }}>
+                        {region === 'US' && weight >= 15 && "Per EPA Section 608: This unit exceeds the 15lb threshold. Mandatory annual leak inspections and 30-day repair cycles apply. Failure to maintain logs may result in significant civil penalties."}
+                        {region === 'EU' && ((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000) >= 5 && "Per EU F-Gas Regulation 517/2014: This unit exceeds 5 tonnes CO2e. Mandatory leak checks every 12 months (or 24 months with leak detection system) are required."}
+                        {!( (region === 'US' && weight >= 15) || (region === 'EU' && ((weight * 0.453592 * (refrigerants_gwp[refrigerant] || 0)) / 1000) >= 5) ) && "This system currently operates below major mandatory inspection thresholds for 2026. However, standard preventative maintenance and record-keeping are recommended for ISO 14001 compliance."}
+                    </p>
+                </div>
+
+                <div style={{ marginTop: 'auto', paddingTop: '10mm', borderTop: '1px solid #000', display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#999', fontWeight: 700 }}>
+                    <div>REPORT ID: {reportId}</div>
+                    <div>PERMITFLOW PRO | OFFICIAL COMPLIANCE DOCUMENT</div>
+                </div>
+            </div>
         </div>
     );
 }
