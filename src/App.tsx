@@ -264,13 +264,26 @@ export default function App() {
         const element = document.getElementById('certificate-template');
         if (!element || !currentResult) return;
         element.style.display = 'block';
-        const canvas = await html2canvas(element, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
-        const pdf = new jsPDF('p', 'mm', 'a4');
-        pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
-        pdf.save(`Certificate_${currentResult.model}.pdf`);
-        element.style.display = 'none';
-        setToast({ message: "Certificate Downloaded", type: "success" });
+        
+        try {
+            const canvas = await html2canvas(element, { 
+                scale: 2,
+                backgroundColor: '#ffffff',
+                onclone: (clonedDoc) => {
+                    const el = clonedDoc.getElementById('certificate-template');
+                    if (el) el.style.display = 'block';
+                }
+            });
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            pdf.addImage(imgData, 'PNG', 0, 0, 210, 297);
+            pdf.save(`Certificate_${currentResult.model}.pdf`);
+            element.style.display = 'none';
+            setToast({ message: "Certificate Downloaded", type: "success" });
+        } catch (error: any) {
+            console.error("PDF generation failed", error);
+            alert(`Error generating PDF: ${error.message || 'Unknown error'}. Please try again.`);
+        }
     };
 
     const reset = () => {
@@ -675,7 +688,30 @@ function GlobalCalculator() {
         if (!element) return;
         
         try {
-            const canvas = await html2canvas(element, { backgroundColor: '#000000' });
+            const canvas = await html2canvas(element, { 
+                backgroundColor: '#000000',
+                scale: 2,
+                logging: false,
+                onclone: (clonedDoc) => {
+                    // Fix for oklab/oklch unsupported color error in html2canvas
+                    const elements = clonedDoc.getElementsByTagName('*');
+                    for (let i = 0; i < elements.length; i++) {
+                        const el = elements[i] as HTMLElement;
+                        const style = window.getComputedStyle(el);
+                        ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
+                            const val = style.getPropertyValue(prop);
+                            if (val && (val.includes('oklab') || val.includes('oklch'))) {
+                                // Default to a safe fallback (cyan for branding, slate for others)
+                                if (prop === 'color' || prop === 'borderColor') {
+                                    el.style.setProperty(prop, '#06b6d4', 'important');
+                                } else {
+                                    el.style.setProperty(prop, '#0f172a', 'important');
+                                }
+                            }
+                        });
+                    }
+                }
+            });
             const imgData = canvas.toDataURL('image/png');
             const pdf = new jsPDF('p', 'mm', 'a4');
             const imgProps = pdf.getImageProperties(imgData);

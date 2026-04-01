@@ -1537,7 +1537,27 @@
                 if (!element) return;
                 
                 try {
-                    const canvas = await html2canvas(element, { backgroundColor: '#000000', scale: 2 });
+                    const canvas = await html2canvas(element, { 
+                        backgroundColor: '#000000', 
+                        scale: 2,
+                        onclone: (clonedDoc) => {
+                            const elements = clonedDoc.getElementsByTagName('*');
+                            for (let i = 0; i < elements.length; i++) {
+                                const el = elements[i];
+                                const style = window.getComputedStyle(el);
+                                ['color', 'backgroundColor', 'borderColor', 'outlineColor'].forEach(prop => {
+                                    const val = style.getPropertyValue(prop);
+                                    if (val && (val.includes('oklab') || val.includes('oklch'))) {
+                                        if (prop === 'color' || prop === 'borderColor') {
+                                            el.style.setProperty(prop, '#06b6d4', 'important');
+                                        } else {
+                                            el.style.setProperty(prop, '#0f172a', 'important');
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    });
                     const imgData = canvas.toDataURL('image/png');
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
