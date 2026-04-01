@@ -606,13 +606,7 @@ export default function App() {
                                 target="_blank" 
                                 rel="noopener noreferrer"
                             >
-                                <button 
-                                    id="download-report-btn"
-                                    onClick={downloadAuditReport}
-                                    className="bg-cyan-500 hover:bg-cyan-400 text-black px-8 py-3 rounded-xl font-black uppercase tracking-tighter transition-all flex items-center gap-2 group"
-                                >
-                                    {pfPaid ? '📥 Download Paid Audit Report' : '📥 Download Free Audit Report'}
-                                </button>
+                                Secure Access via Gumroad
                             </a>
                             <button onClick={() => setShowPaywall(false)} className="text-[10px] text-slate-600 font-bold uppercase hover:text-white tracking-widest">Maybe Later</button>
                         </motion.div>
