@@ -25,3 +25,4 @@ build/
 
 # Deployment configs (not needed in repo)
 .vercel/
+.env

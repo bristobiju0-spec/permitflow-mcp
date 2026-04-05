@@ -3,7 +3,21 @@ import logging
 from typing import Optional, List
 import os
 from fastmcp import FastMCP
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException
+from dotenv import load_dotenv
+from auth import get_current_user, get_supabase
+
+load_dotenv()
+
+PORT = int(os.getenv("PORT", 10000))
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_SERVICE_ROLE_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY")
+
+MCP_SECRET = os.getenv("MCP_SHARED_SECRET")
+
+def verify_mcp_token(token: str) -> bool:
+    """Simple shared-secret check for MCP tool calls."""
+    return token == MCP_SECRET
 import uvicorn
 import asyncio
 from agents.vision_specialist import VisionSpecialist
@@ -192,17 +206,39 @@ async def root():
     return {"status": "ok"}
 
 @app.get("/health")
-async def health():
+def health():
     """
     Secondary health check route.
     """
-    return {"status": "ready"}
+    return {"status": "ok"}
+
+def run_compliance_engine(payload: dict) -> dict:
+    """Mock compliance engine execution"""
+    return {"status": "success", "message": "Calculated successfully", "payload": payload}
+
+# Protected route — requires valid Supabase JWT
+@app.post("/calculate")
+async def calculate(payload: dict, user=Depends(get_current_user)):
+    supabase = get_supabase()
+    user_id = str(user.id)
+
+    # Atomic usage log increment via Supabase RPC to prevent race conditions
+    result = supabase.rpc("increment_usage", {"p_user_id": user_id}).execute()
+    new_count = result.data
+
+    if new_count > 1:
+        # Check if they're a paid user via user metadata or a separate table
+        raise HTTPException(status_code=402, detail="paywall")
+
+    # Run calculation
+    result = run_compliance_engine(payload)
+
+    return {"user_id": user_id, "result": result}
 
 # Mount FastMCP without the 'path' argument (it is not supported in this version)
 mcp.mount(app)
 
 if __name__ == "__main__":
     # Render requires binding to 0.0.0.0 and using the PORT env var
-    port = int(os.getenv("PORT", 10000))
-    logger.info(f"Starting 'sales-pro' MCP Server on host 0.0.0.0 port {port}")
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    logger.info(f"Starting 'sales-pro' MCP Server on host 0.0.0.0 port {PORT}")
+    uvicorn.run(app, host="0.0.0.0", port=PORT)
