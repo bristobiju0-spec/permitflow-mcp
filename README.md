@@ -18,27 +18,6 @@ The PermitFlow Pro MCP (Model Context Protocol) server provides powerful tools f
 
 ---
 
-## 🚀 Installation & Setup
-
-### 1. Environment Variables
-Create a `.env` file in the root directory:
-```env
-PORT=10000
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
-MCP_SHARED_SECRET=your_mcp_shared_secret
-```
-
-### 2. Connect to Claude
-Run this command in your terminal to add the server to your Claude environment:
-
-```bash
-# Example using local server
-claude mcp add permitflow-pro --transport http http://localhost:10000/
-# Or use your deployed Render URL once hosted
-```
-
----
 
 ## 💡 Available Tools
 
