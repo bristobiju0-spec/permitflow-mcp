@@ -1,54 +1,72 @@
-# 🚀 Bristo Sales Prospector
-**The Autonomous Lead Research Agent for Claude.**
+# 🚀 PermitFlow Pro MCP Server
+**The Autonomous Compliance & Sales Intelligence Agent.**
 
-Bristo Sales Prospector is an MCP (Model Context Protocol) server that empowers Claude to perform deep, real-time research on B2B prospects and companies. It eliminates manual "tab-hunting" by pulling firmographics, funding data, and strategic priorities directly into your chat.
+The PermitFlow Pro MCP (Model Context Protocol) server provides powerful tools for Claude to perform both real-time sales prospecting and complex HVAC compliance auditing. Built on FastMCP and FastAPI, it supports an agentic workflow that bridges company intelligence with regulatory logic.
 
 ---
 
 ## 🛠 Features
-- **Deep Prospecting:** Get instant summaries on individuals (roles, skills, focus).
-- **Company Intelligence:** Fetch real-time data on HQ locations, employee counts, and 2026 strategic AI roadmaps.
-- **Autonomous Research:** Claude can decide *when* to use this tool based on your sales-related questions.
-- **Cloud Hosted:** High availability via Render.
+
+### Sales Intelligence
+- **Deep Prospecting:** Instantly research individuals, roles, and skills.
+- **Company Intelligence:** Fetch real-time firmographics and 2026 AI strategic roadmaps.
+
+### HVAC Compliance & Audit
+- **Global Compliance Engine:** Checks HVAC compliance standards for USA (EPA), EU (F-Gas), UK, and International.
+- **Agentic Auditor Workflow:** Uses dual agents (Vision-to-Spec Auditor and Filer) to extract equipment metrics and verify JA18 Logic Locks.
+- **Paywall & Rate Limiting:** Built-in usage limits (free vs. paid tier) protected by Supabase authentication.
 
 ---
 
-## 🚀 Quick Install (Claude Code / Desktop)
-Run this command in your terminal to add the agent to your Claude environment:
+## 🚀 Installation & Setup
 
-```bash
-claude mcp add sales-pro --transport http https://sales-agent-pro.onrender.com/
+### 1. Environment Variables
+Create a `.env` file in the root directory:
+```env
+PORT=10000
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+MCP_SHARED_SECRET=your_mcp_shared_secret
 ```
 
-## 💡 How to Use
+### 2. Connect to Claude
+Run this command in your terminal to add the server to your Claude environment:
 
-Once installed, you don't need special commands. Just ask Claude naturally:
+```bash
+# Example using local server
+claude mcp add permitflow-pro --transport http http://localhost:10000/
+# Or use your deployed Render URL once hosted
+```
 
-> "Research NVIDIA and tell me if they are a good lead for an AI infrastructure company."
+---
 
-> "I'm meeting with the CEO of Tesla tomorrow. Give me a 1-page research summary."
+## 💡 Available Tools
 
-> "Find the employee count and recent funding for Anthropic."
+Through MCP, Claude natively integrates the following agent tools:
+- `healthz`: Diagnostics to check MCP server health.
+- `research_prospect`: Analyzes a prospect's role, experience, and contact probability.
+- `sales_pro`: Analyzes a company's strategic focus and recent developments.
+- `compliance_check`: Evaluates HVAC refrigerant compliance based on region and charge weight.
+- `process_hvac_compliance_pro`: Executes a multi-agent workflow analyzing equipment imagery for compliance checks.
+
+## 🔒 REST Endpoints & Authentication
+
+The FastAPI server provides additional REST endpoints:
+- `GET /` & `GET /health`: Diagnostic healthcheck endpoints.
+- `POST /calculate`: A protected endpoint that runs the core compliance engine. It requires a valid Supabase JWT and enforces usage limits using an atomic Supabase RPC log.
+
+---
 
 ## 🏗 Repository Structure
 
-- **`.claude-plugin/`**: Official marketplace metadata and `plugin.json`.
-- **`agents/`**: Contains `SKILL.md` which defines the agent's behavior and personality.
-- **`mcp_server.py`**: The core Python engine (FastMCP/FastAPI) hosted on Render.
-- **`demo.html`**: A local playground to test the server connection.
-
-## 🔒 Privacy & Security
-
-- **Data Usage**: This agent only accesses public company information.
-- **No Storage**: We do not store your lead lists or chat history.
-- **Transport**: All communication is handled via secure SSE (Server-Sent Events).
-
-## 💰 Pricing
-
-**Free Beta**: This agent is currently in free beta. No tokens or paywalls are required to use the research tools during this period.
+- **`.claude-plugin/`**: Official marketplace metadata and `plugin.json` structure.
+- **`agents/`**: Contains specific agent implementations (`VisionSpecialist`, `ComplianceFilingAgent`).
+- **`mcp_server.py`**: Main application file defining FastMCP tools and FastAPI routes.
+- **`auth.py`**: Supabase authentication and user session security.
+- **`demo.html` / `index.html`**: Front-end playgrounds to test the API visually.
 
 ---
 
-## 👨💻 Author
+## 👨‍💻 Author
 
-**Bristo** – Building the future of AI-driven sales.
+**Bristo** – Serial AI Founder | Building the future of AI-driven compliance and sales.
