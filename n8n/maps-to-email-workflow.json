@@ -1,0 +1,352 @@
+{
+  "name": "Maps-to-Email Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "hours",
+              "interval": 1
+            }
+          ]
+        }
+      },
+      "id": "416c148c",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        -300,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "target_city",
+              "value": "Muscat"
+            }
+          ]
+        }
+      },
+      "id": "set-city",
+      "name": "Set Target City",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        -100,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://google.serper.dev/search",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-KEY",
+              "value": "YOUR_SERPER_API_KEY_HERE"
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\"q\":\"Commercial HVAC {{ $json.target_city }}\", \"gl\": \"usa\", \"hl\": \"en\"}",
+        "options": {}
+      },
+      "id": "serper-api",
+      "name": "Serper API (Discovery)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        100,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extract organic results and return as separate items\nconst results = $input.all()[0].json.organic || [];\nreturn results.map(item => ({\n  json: {\n    url: item.link,\n    title: item.title\n  }\n}));"
+      },
+      "id": "extract-links",
+      "name": "Code (Extract Organic Links)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        300,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.url || '' }}",
+              "operation": "notContains",
+              "value2": "yelp.com"
+            },
+            {
+              "value1": "={{ $json.url || '' }}",
+              "operation": "notContains",
+              "value2": "yellowpages.com"
+            },
+            {
+              "value1": "={{ $json.url || '' }}",
+              "operation": "notContains",
+              "value2": "google.com"
+            },
+            {
+              "value1": "={{ $json.url || '' }}",
+              "operation": "startsWith",
+              "value2": "http"
+            }
+          ]
+        }
+      },
+      "id": "filter-urls",
+      "name": "Filter (No Directories)",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 1,
+      "position": [
+        500,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      },
+      "id": "split-batches",
+      "name": "Split In Batches",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 2,
+      "position": [
+        700,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "amount": "={{ Math.floor(Math.random() * (90 - 45 + 1)) + 45 }}",
+        "unit": "seconds"
+      },
+      "id": "87bc12d4",
+      "name": "Wait (Random 45-90s)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1,
+      "position": [
+        900,
+        240
+      ],
+      "webhookId": "webhook-wait-node"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}",
+        "options": {}
+      },
+      "id": "129ab121",
+      "name": "Extract Website (Scraper)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        1100,
+        240
+      ],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const emailRegex = /([a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+\\.[a-zA-Z0-9_-]+)/gi;\nconst freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'aol.com', 'live.com', 'msn.com'];\nlet emails = [];\n\nconst item = $input.all()[0];\nif (!item || !item.json.data) {\n  return [];\n}\n\nconst data = typeof item.json.data === 'string' ? item.json.data : JSON.stringify(item.json.data);\nconst matches = data.match(emailRegex);\nif (matches) {\n  emails = emails.concat(matches);\n}\n\n// Deduplicate array\nemails = [...new Set(emails)];\n\n// Format and label source, validate domain, add industry, and set project tag\nreturn emails.map(email => {\n  const domain = email.split('@')[1].toLowerCase();\n  const value = freeProviders.includes(domain) ? 'Low' : 'High';\n  return {\n    json: {\n      email,\n      source: 'Serper Discovery',\n      industry: 'HVAC',\n      value: value,\n      project_tag: 'PermitFlow',\n      city: $item(0).$node[\"Set Target City\"].json[\"target_city\"]\n    }\n  };\n});"
+      },
+      "id": "4bcaab81",
+      "name": "Code (Email extraction & Qualification)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "documentId": {
+          "__rl": true,
+          "value": "YOUR_SHEET_ID_HERE",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": [
+            {
+              "column": "Email",
+              "field": "email"
+            },
+            {
+              "column": "Source",
+              "field": "source"
+            },
+            {
+              "column": "Industry",
+              "field": "industry"
+            },
+            {
+              "column": "Value",
+              "field": "value"
+            },
+            {
+              "column": "Project Tag",
+              "field": "project_tag"
+            },
+            {
+              "column": "City",
+              "field": "city"
+            }
+          ]
+        },
+        "options": {
+          "keyColumns": [
+            "Email"
+          ]
+        }
+      },
+      "id": "89cca181",
+      "name": "Google Sheets (Upsert)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4,
+      "position": [
+        1500,
+        240
+      ]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Target City",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Target City": {
+      "main": [
+        [
+          {
+            "node": "Serper API (Discovery)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Serper API (Discovery)": {
+      "main": [
+        [
+          {
+            "node": "Code (Extract Organic Links)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Extract Organic Links)": {
+      "main": [
+        [
+          {
+            "node": "Filter (No Directories)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter (No Directories)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split In Batches": {
+      "main": [
+        [
+          {
+            "node": "Wait (Random 45-90s)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait (Random 45-90s)": {
+      "main": [
+        [
+          {
+            "node": "Extract Website (Scraper)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Website (Scraper)": {
+      "main": [
+        [
+          {
+            "node": "Code (Email extraction & Qualification)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code (Email extraction & Qualification)": {
+      "main": [
+        [
+          {
+            "node": "Google Sheets (Upsert)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Sheets (Upsert)": {
+      "main": [
+        [
+          {
+            "node": "Split In Batches",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {}
+}

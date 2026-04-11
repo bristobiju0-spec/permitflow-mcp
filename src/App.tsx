@@ -297,8 +297,12 @@ export default function App() {
         <footer className="py-6 px-10 border-t border-white/5 bg-black/20 backdrop-blur-sm z-20">
             <div className="flex flex-col md:flex-row justify-between items-center gap-6">
                 <div className="flex items-center gap-6">
-                    <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400">Privacy Policy</button>
-                    <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400">Terms of Service</button>
+                    <button onClick={() => openLegal('privacy')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400 text-left">Privacy Policy</button>
+                    <button onClick={() => openLegal('terms')} className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-cyan-400 text-left">Terms of Service</button>
+                    <a href="mailto:support@permitflow.com?subject=Bug Report / Feature Suggestion" className="text-[10px] font-black text-cyan-500 uppercase tracking-widest hover:text-cyan-400 transition-all flex items-center gap-1.5 border border-cyan-500/20 px-3 py-1.5 rounded-lg bg-cyan-500/5">
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/></svg>
+                        Report a Bug
+                    </a>
                     <span className="text-[10px] text-slate-700 font-bold uppercase tracking-widest">© 2026 PermitFlow</span>
                 </div>
                 <div className="flex items-center gap-4">
@@ -358,7 +362,7 @@ export default function App() {
                     </motion.div>
                 </section>
 
-                <GlobalCalculatorIntegration />
+                {/* Hero Section */}
 
                 {/* FAQ Section */}
                 <section className="w-full max-w-3xl mx-auto px-6 py-20 z-10">
@@ -482,30 +486,23 @@ export default function App() {
                 <div className="p-10 max-w-5xl mx-auto w-full flex-1">
                     {activeView === 'dashboard' ? (
                         <div className="industrial-card p-12 rounded-[40px] border-white/5 text-center">
-                            {/* Region Selector */}
-                            <div className="mb-10 flex flex-col items-center">
-                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mb-4">Select Compliance Region</p>
-                                <div className="flex flex-wrap justify-center gap-2">
-                                    {['USA (EPA)', 'Europe (EU F-Gas)', 'UK', 'International'].map(r => (
-                                        <button 
-                                            key={r}
-                                            onClick={() => setRegion(r)}
-                                            className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all border ${region === r ? 'bg-cyan-500 text-black border-cyan-500' : 'bg-white/5 text-slate-400 border-white/5 hover:bg-white/10'}`}
-                                        >
-                                            {r}
-                                        </button>
-                                    ))}
-                                </div>
+                            <div className="mb-12">
+                                <GlobalCalculator />
+                            </div>
+
+                            <div className="relative py-12 flex items-center gap-8 opacity-20">
+                                <div className="flex-1 h-px bg-white/20"></div>
+                                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">OR CAPTURE DATA</span>
+                                <div className="flex-1 h-px bg-white/20"></div>
                             </div>
 
                             {!preview ? (
-                                <div className="py-20 border-2 border-dashed border-white/5 rounded-3xl relative group">
+                                <div className="py-12 border-2 border-dashed border-white/5 rounded-3xl relative group bg-white/[0.02]">
                                     <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" onChange={handleFileUpload} />
-                                    <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-6 group-hover:bg-cyan-500/20 transition-colors">
-                                        <svg className="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                    <div className="w-16 h-16 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-500/20 transition-colors">
+                                        <svg className="w-8 h-8 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                     </div>
-                                    <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight italic">Ready to Capture</h2>
-                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Drop HVAC Plate Image Here</p>
+                                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Optional: Capture HVAC Plate for Auto-Log</p>
                                 </div>
                             ) : (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-12 text-left">
@@ -638,14 +635,12 @@ export default function App() {
 
 
 function GlobalCalculator() {
-    const [region, setRegion] = useState('US');
-    const [refrigerant, setRefrigerant] = useState('R-410A');
-    const [weight, setWeight] = useState<number>(0);
-    const [result, setResult] = useState<string | null>(null);
-    const [isFreeUse, setIsFreeUse] = useState(false);
-    const [showPaywall, setShowPaywall] = useState(false);
-    const [pfPaid, setPfPaid] = useState(false);
-    const [reportId, setReportId] = useState('');
+    const [reportId, setReportId] = useState('PF-XXXX-XXXX');
+
+    // Mini-preview logic
+    const gwp = refrigerants_gwp[refrigerant] || 0;
+    const co2e = (weight * 0.453592 * gwp) / 1000;
+    const isCompliant = region === 'US' ? (weight < 15) : (co2e < 5);
 
     useEffect(() => {
         const params = new URLSearchParams(window.location.search);
@@ -738,51 +733,105 @@ function GlobalCalculator() {
     return (
         <div id="calculator-content" style={{ backgroundColor: '#0a0a0b', border: '1px solid #2d2d35', color: 'white' }} className="w-full industrial-card p-10 rounded-[40px] relative overflow-hidden mb-24">
             <div id="calc-gradient" style={{ background: 'linear-gradient(to right, #06b6d4, #06b6d4)' }} className="absolute top-0 left-0 w-full h-1 opacity-20"></div>
-            <div className="text-center mb-10">
-                <h3 className="text-2xl font-black text-white uppercase tracking-tighter italic mb-2">Global Compliance Calculator</h3>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">2026 HVAC Standard Engine</p>
+            
+            <div className="flex flex-col lg:flex-row gap-12 items-start">
+                {/* Left: Inputs */}
+                <div className="flex-1 w-full">
+                    <div className="mb-10">
+                        <h3 className="text-3xl font-black text-white uppercase tracking-tighter italic mb-2">Compliance Engine</h3>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Technician Workflow v2.0</p>
+                    </div>
+
+                    <div className="space-y-6 mb-8">
+                        <div className="space-y-2">
+                            <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Jurisdiction</label>
+                            <select value={region} onChange={e => setRegion(e.target.value)} className="w-full fat-input p-5 rounded-2xl bg-white/5 text-white font-bold text-sm border border-white/5">
+                                <option value="US">USA (EPA Section 608)</option>
+                                <option value="EU">Europe (EU F-GAS)</option>
+                                <option value="Global">International Standards</option>
+                            </select>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Refrigerant Type</label>
+                                <select value={refrigerant} onChange={e => setRefrigerant(e.target.value)} className="w-full fat-input p-5 rounded-2xl bg-white/5 text-white font-bold text-sm border border-white/5">
+                                    {Object.keys(refrigerants_gwp).map(r => <option key={r} value={r}>{r}</option>)}
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Charge Weight (Lbs)</label>
+                                <input type="number" value={weight || ''} onChange={e => setWeight(parseFloat(e.target.value))} className="w-full fat-input p-5 rounded-2xl bg-white/5 text-white font-bold text-sm border border-white/5" placeholder="e.g. 15" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onClick={handleCalculate} className="w-full py-6 bg-cyan-500 text-black font-black text-sm uppercase tracking-[0.2em] rounded-2xl hover:bg-cyan-400 transition-all shadow-[0_0_30px_-5px_rgba(6,182,212,0.4)] active:scale-95 flex items-center justify-center gap-3">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        Generate Compliance Log
+                    </button>
+                    
+                    {result && (
+                        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`mt-6 p-6 rounded-2xl border text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
+                            <span className="font-black uppercase tracking-widest text-xs italic">{result}</span>
+                            {isFreeUse && (
+                                <button onClick={downloadAuditReport} className="mt-4 w-full py-3 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-xl hover:bg-white/20 transition-all border border-white/10">
+                                    Export Official Log
+                                </button>
+                            )}
+                        </motion.div>
+                    )}
+                </div>
+
+                {/* Right: Audit-Ready Preview */}
+                <div className="flex-1 w-full lg:max-w-xs shrink-0">
+                    <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest mb-4 ml-1">Audit-Ready Preview</p>
+                    <div className="bg-white rounded-xl p-6 shadow-2xl relative overflow-hidden aspect-[1/1.4] scale-[1] origin-top border-4 border-slate-100">
+                        <div className="flex justify-between items-start border-b border-black/10 pb-4 mb-4">
+                            <div className="font-black text-[10px] text-black">PF</div>
+                            <div className="text-right">
+                                <div className="font-black text-[8px] uppercase text-black">Audit Log</div>
+                                <div className="text-[6px] text-slate-400">{new Date().toLocaleDateString()}</div>
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-3">
+                            <div className="border-b border-slate-50 pb-2">
+                                <div className="text-[6px] font-black uppercase text-slate-400 mb-1">Specifications</div>
+                                <div className="flex justify-between text-[7px] text-black font-bold">
+                                    <span>Type</span>
+                                    <span>{refrigerant}</span>
+                                </div>
+                                <div className="flex justify-between text-[7px] text-black font-bold">
+                                    <span>Weight</span>
+                                    <span>{weight} Lbs</span>
+                                </div>
+                            </div>
+
+                            <div className="bg-slate-50 p-2 rounded-lg text-center">
+                                <div className="text-[5px] uppercase font-black text-slate-400 mb-1">CO2 Equivalent</div>
+                                <div className="text-sm font-black text-black">{co2e.toFixed(2)}t</div>
+                            </div>
+
+                            <div className={`p-2 rounded-lg text-center border ${isCompliant ? 'bg-green-50 border-green-100 text-green-700' : 'bg-red-50 border-red-100 text-red-700'}`}>
+                                <div className="text-[5px] uppercase font-black mb-0.5">Status</div>
+                                <div className="text-[8px] font-black uppercase italic">{isCompliant ? 'APPROVED' : 'REJECTED'}</div>
+                            </div>
+                            
+                            <div className="mt-auto pt-4 border-t border-slate-100 text-[5px] text-slate-300 font-mono">
+                                ID: {reportId}
+                            </div>
+                        </div>
+
+                        {/* Professional Watermark */}
+                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none rotate-[-45deg]">
+                            <div className="font-black text-4xl text-black">PERMITFLOW</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 text-left">
-                <div className="space-y-2">
-                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Region</label>
-                    <select value={region} onChange={e => setRegion(e.target.value)} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5">
-                        <option value="US">USA (EPA)</option>
-                        <option value="EU">Europe (EU F-GAS)</option>
-                        <option value="Global">International</option>
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Refrigerant</label>
-                    <select value={refrigerant} onChange={e => setRefrigerant(e.target.value)} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5">
-                        {Object.keys(refrigerants_gwp).map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                </div>
-                <div className="space-y-2">
-                    <label className="text-[10px] text-slate-600 font-bold uppercase tracking-widest ml-1">Charge Weight (Lbs)</label>
-                    <input type="number" value={weight || ''} onChange={e => setWeight(parseFloat(e.target.value))} className="w-full fat-input p-4 rounded-xl bg-white/5 text-white font-bold text-sm border border-white/5" placeholder="e.g. 15" />
-                </div>
-            </div>
-
-            <div className="flex flex-col items-center">
-                {result && (
-                    <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`w-full p-6 rounded-2xl border mb-6 text-center ${result.includes('⚠️') ? 'bg-red-500/10 border-red-500/20 text-red-500' : 'bg-green-500/10 border-green-500/20 text-green-500'}`}>
-                        <span className="font-black uppercase tracking-widest text-xs italic mb-4 block">{result}</span>
-                        {isFreeUse && (
-                            <button onClick={downloadAuditReport} className="mt-4 px-6 py-2 bg-white/10 text-white font-bold text-[10px] uppercase tracking-widest rounded-lg hover:bg-white/20 transition-all border border-white/10">
-                                {pfPaid ? '📥 Download Paid Audit Report' : '📥 Download Free Audit Report'}
-                            </button>
-                        )}
-                    </motion.div>
-                )}
-
-                <button onClick={handleCalculate} className="px-12 py-5 bg-white/10 text-white font-black text-xs uppercase tracking-[0.2em] rounded-2xl hover:bg-white/20 transition-all border border-white/10 active:scale-95">
-                    Calculate Logic
-                </button>
-            </div>
-
-            <p className="mt-10 text-[9px] text-slate-600 font-bold uppercase tracking-[0.1em] text-center italic opacity-50">
-                Calculations based on 2026 EPA and EU F-Gas standards. Not legal advice.
+            <p className="mt-12 text-[9px] text-slate-600 font-bold uppercase tracking-[0.1em] text-center italic opacity-50 border-t border-white/5 pt-6">
+                Calculations based on 2026 EPA and EU F-Gas standards. This preview reflects the official log entry.
             </p>
 
             <AnimatePresence>
